@@ -466,18 +466,39 @@
         // ---------------- Generic CRUD / Actions ----------------
         window.removePlayer = async (sessionId, playerId) => {
             if(confirm("Yakin ingin menghapus pemain ini dari sesi?")) {
-                const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
-                if (!session) return;
-                const updatedPlayers = session.players.filter(p => p.id !== playerId);
-                await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
-                showToast("Pemain dihapus", "success");
+                try {
+                    const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
+                    if (!session) return;
+                    const updatedPlayers = session.players.filter(p => p.id !== playerId);
+                    await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+                    showToast("Pemain dihapus", "success");
+                } catch(err) { showToast("Gagal menghapus pemain", "error"); }
             }
         };
 
+        // PERBAIKAN: Penambahan Try-Catch dan Optimistic UI untuk fungsi Hapus Sesi
         window.deleteSession = async (sessionId) => {
             if(confirm("PERINGATAN: Yakin ingin MENGHAPUS SELURUH SESI INI dari riwayat?")) {
-                await deleteDoc(doc(db, 'ps_sessions', String(sessionId)));
-                showToast("Sesi berhasil dihapus", "success");
+                try {
+                    // 1. Optimistic UI Update: Langsung sembunyikan elemen secara instan agar UI terasa cepat
+                    const cardToRemove = document.querySelector(`.riwayat-card[data-session-id="${sessionId}"]`);
+                    if (cardToRemove) {
+                        cardToRemove.style.display = 'none';
+                    }
+
+                    // 2. Lakukan penghapusan di database Firebase
+                    await deleteDoc(doc(db, 'ps_sessions', String(sessionId)));
+                    showToast("Sesi berhasil dihapus", "success");
+                } catch (error) {
+                    console.error("Gagal menghapus sesi: ", error);
+                    showToast("Gagal menghapus sesi. Silakan coba lagi.", "error");
+                    
+                    // Jika gagal dari server, kembalikan tampilan elemen tadi
+                    const cardToRemove = document.querySelector(`.riwayat-card[data-session-id="${sessionId}"]`);
+                    if (cardToRemove) {
+                        cardToRemove.style.display = 'block';
+                    }
+                }
             }
         };
 
@@ -494,68 +515,78 @@
         };
 
         window.togglePlayStatus = async (sessionId, playerId, action) => {
-             const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
-             if (!session) return;
-             const updatedPlayers = session.players.map(p => {
-                 if (p.id === playerId) {
-                     let logs = p.timeLogs || [];
-                     if (action === 'stop') {
-                         logs = logs.map(l => l.end === null ? { ...l, end: Date.now() } : l);
-                         return { ...p, timeLogs: logs, isActive: false };
-                     } else if (action === 'start') {
-                         logs.push({ start: Date.now(), end: null });
-                         return { ...p, timeLogs: logs, isActive: true };
+            try {
+                 const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
+                 if (!session) return;
+                 const updatedPlayers = session.players.map(p => {
+                     if (p.id === playerId) {
+                         let logs = p.timeLogs || [];
+                         if (action === 'stop') {
+                             logs = logs.map(l => l.end === null ? { ...l, end: Date.now() } : l);
+                             return { ...p, timeLogs: logs, isActive: false };
+                         } else if (action === 'start') {
+                             logs.push({ start: Date.now(), end: null });
+                             return { ...p, timeLogs: logs, isActive: true };
+                         }
                      }
-                 }
-                 return p;
-             });
-             await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+                     return p;
+                 });
+                 await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+            } catch(err) { showToast("Gagal mengupdate status", "error"); }
         };
 
         window.updateTimeLog = async (sessionId, playerId, logIndex, field, timeString) => {
-            const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
-            if (!session) return;
-            const updatedPlayers = session.players.map(p => {
-                if (p.id === playerId) {
-                    let logs = [...p.timeLogs];
-                    let log = {...logs[logIndex]};
-                    if (timeString) {
-                        let dateObj = new Date(log[field] || Date.now());
-                        let [hours, minutes] = timeString.split(':');
-                        dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
-                        log[field] = dateObj.getTime();
-                    } else if (field === 'end') { log[field] = null; }
-                    logs[logIndex] = log;
-                    return { ...p, timeLogs: logs, isActive: logs.some(l => l.end === null) };
-                }
-                return p;
-            });
-            await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+            try {
+                const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
+                if (!session) return;
+                const updatedPlayers = session.players.map(p => {
+                    if (p.id === playerId) {
+                        let logs = [...p.timeLogs];
+                        let log = {...logs[logIndex]};
+                        if (timeString) {
+                            let dateObj = new Date(log[field] || Date.now());
+                            let [hours, minutes] = timeString.split(':');
+                            dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
+                            log[field] = dateObj.getTime();
+                        } else if (field === 'end') { log[field] = null; }
+                        logs[logIndex] = log;
+                        return { ...p, timeLogs: logs, isActive: logs.some(l => l.end === null) };
+                    }
+                    return p;
+                });
+                await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+            } catch(err) { showToast("Gagal mengubah waktu", "error"); }
         };
 
         window.updateTrophy = async (sessionId, playerId, delta) => {
-            const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
-            if (!session) return;
-            const updatedPlayers = session.players.map(p => {
-                 if (p.id === playerId) return { ...p, trophies: Math.max(0, (p.trophies || 0) + delta) };
-                 return p;
-             });
-            await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+            try {
+                const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
+                if (!session) return;
+                const updatedPlayers = session.players.map(p => {
+                     if (p.id === playerId) return { ...p, trophies: Math.max(0, (p.trophies || 0) + delta) };
+                     return p;
+                 });
+                await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+            } catch(err) {}
         };
 
         window.updateTotalSewa = async (sessionId, value) => {
-             const total = parseInt(value) || 0;
-             await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { totalSewa: total });
+             try {
+                 const total = parseInt(value) || 0;
+                 await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { totalSewa: total });
+             } catch(err) { showToast("Gagal menyimpan harga", "error"); }
         };
 
         window.stopAllTimers = async () => {
             if (!activeSession) return;
-            const updatedPlayers = activeSession.players.map(p => {
-                let logs = (p.timeLogs||[]).map(l => l.end === null ? { ...l, end: Date.now() } : l);
-                return { ...p, timeLogs: logs, isActive: false };
-            });
-            await updateDoc(doc(db, 'ps_sessions', 'current_active'), { players: updatedPlayers });
-            showToast("Semua waktu pemain dihentikan", "success");
+            try {
+                const updatedPlayers = activeSession.players.map(p => {
+                    let logs = (p.timeLogs||[]).map(l => l.end === null ? { ...l, end: Date.now() } : l);
+                    return { ...p, timeLogs: logs, isActive: false };
+                });
+                await updateDoc(doc(db, 'ps_sessions', 'current_active'), { players: updatedPlayers });
+                showToast("Semua waktu pemain dihentikan", "success");
+            } catch(err) { showToast("Gagal menghentikan timer", "error"); }
         };
 
         // ---------------- UI Renderers ----------------
@@ -742,7 +773,7 @@
                                     container.querySelector('.hist-struk').classList.add('hidden');
                                     container.querySelector('.hist-edit').classList.remove('hidden');
                                 " class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
-                                <button onclick="deleteSession('${session.id}')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-trash"></i></button>
+                                <button onclick="deleteSession('${session.id}')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-trash"></i> Hapus Sesi</button>
                             </div>
                         </div>
 
