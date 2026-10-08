@@ -306,9 +306,11 @@
             return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
         };
 
+        // BUGFIX: Cek waktu negatif agar tidak memotong perhitungan
         const calculateDurationMin = (start, end) => {
             if (!start) return 0;
-            return Math.floor(((end || Date.now()) - start) / 60000);
+            const diff = Math.floor(((end || Date.now()) - start) / 60000);
+            return diff > 0 ? diff : 0;
         };
 
         const formatDuration = (minutes) => {
@@ -439,8 +441,12 @@
             const timeStr = document.getElementById('add-player-time-input').value;
             let startTime = Date.now();
             
+            // BUGFIX: Cek apakah ini sesi riwayat. Jika ya, timer harus langsung berhenti saat ditambah.
+            const isHistory = currentAddPlayerSessionId !== 'current_active';
+            
             if (timeStr) {
-                let dateObj = new Date();
+                // BUGFIX: Gunakan tanggal sesi saat menambah pemain di riwayat masa lalu, jangan gunakan hari ini.
+                let dateObj = session.sessionDate ? new Date(session.sessionDate) : new Date();
                 let [hours, minutes] = timeStr.split(':');
                 dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
                 startTime = dateObj.getTime();
@@ -449,9 +455,10 @@
             const newPlayersData = finalNames.map(name => ({
                 id: 'p_' + Date.now() + Math.random().toString(36).substr(2, 5),
                 name: name,
-                timeLogs: [{ start: startTime, end: null }],
+                // BUGFIX: Jika ditambah di riwayat, end time sama dengan start time (otomatis berhenti)
+                timeLogs: [{ start: startTime, end: isHistory ? startTime : null }],
                 trophies: 0,
-                isActive: true
+                isActive: !isHistory
             }));
 
             try {
@@ -476,11 +483,9 @@
             }
         };
 
-        // PERBAIKAN TOTAL: Menghapus Optimistic UI dan Mengandalkan Firestore Real-time Sync
         window.deleteSession = async (sessionId, btnEl) => {
             if(confirm("PERINGATAN: Yakin ingin MENGHAPUS PERMANEN seluruh sesi ini dari riwayat?")) {
                 try {
-                    // Ubah tombol jadi loading
                     if(btnEl) {
                         btnEl.disabled = true;
                         btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghapus...';
@@ -489,18 +494,11 @@
                     
                     const cleanId = String(sessionId).trim();
                     const docRef = doc(db, 'ps_sessions', cleanId);
-                    
-                    // Tunggu konfirmasi murni dari Firebase Database
                     await deleteDoc(docRef);
                     showToast("Sesi berhasil dihapus secara permanen!", "success");
-                    
-                    // TIDAK PERLU manual hapus di layar, Firebase onSnapshot akan otomatis
-                    // membaca perubahan dan menghilangkan kartu yg terhapus secara akurat
                 } catch (error) {
                     console.error("Gagal menghapus sesi: ", error);
                     showToast("Gagal menghapus sesi dari database.", "error");
-                    
-                    // Kembalikan tombol jika gagal
                     if(btnEl) {
                         btnEl.disabled = false;
                         btnEl.innerHTML = '<i class="fa-solid fa-trash"></i> Hapus Sesi';
@@ -547,16 +545,29 @@
             try {
                 const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
                 if (!session) return;
+                
                 const updatedPlayers = session.players.map(p => {
                     if (p.id === playerId) {
                         let logs = [...p.timeLogs];
                         let log = {...logs[logIndex]};
+                        
                         if (timeString) {
-                            let dateObj = new Date(log[field] || Date.now());
+                            // BUGFIX: Mencegah update end time dari form kosong menggunakan tanggal 'hari ini' untuk sesi masa lalu
+                            let baseTime = log[field] || log.start;
+                            if (!baseTime && session.sessionDate) {
+                                baseTime = new Date(session.sessionDate).getTime();
+                            } else if (!baseTime) {
+                                baseTime = Date.now();
+                            }
+                            
+                            let dateObj = new Date(baseTime);
                             let [hours, minutes] = timeString.split(':');
                             dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
                             log[field] = dateObj.getTime();
-                        } else if (field === 'end') { log[field] = null; }
+                        } else if (field === 'end') { 
+                            log[field] = null; 
+                        }
+                        
                         logs[logIndex] = log;
                         return { ...p, timeLogs: logs, isActive: logs.some(l => l.end === null) };
                     }
@@ -681,12 +692,19 @@
         function renderHistoryTab() {
             const listEl = document.getElementById('riwayat-list');
 
-            // 1. Simpan Memory: Ingat kartu/sesi riwayat mana saja yang sedang "Terbuka/Expanded"
+            // BUGFIX: Memori UI harus mendeteksi apakah suatu kartu sedang dalam 'Edit Mode'
             const openCards = [];
+            const editCards = [];
+            
             document.querySelectorAll('.riwayat-card').forEach(card => {
                 const detailNode = card.querySelector('.riwayat-detail');
                 if (detailNode && !detailNode.classList.contains('hidden')) {
                     openCards.push(card.dataset.sessionId);
+                    
+                    const editNode = card.querySelector('.hist-edit');
+                    if (editNode && !editNode.classList.contains('hidden')) {
+                        editCards.push(card.dataset.sessionId);
+                    }
                 }
             });
 
@@ -782,7 +800,6 @@
                                     container.querySelector('.hist-edit').classList.remove('hidden');
                                 " class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
                                 
-                                <!-- TOMBOL HAPUS YG DIPERBARUI -->
                                 <button onclick="deleteSession('${session.id}', this)" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2 whitespace-nowrap"><i class="fa-solid fa-trash"></i> Hapus Sesi</button>
                             </div>
                         </div>
@@ -830,12 +847,20 @@
             });
             listEl.innerHTML = html;
 
-            // 2. Kembalikan Memory: Buka kembali kartu yang sebelumnya terbuka secara otomatis
+            // BUGFIX: Kembalikan memory UI, termasuk apakah sedang dalam mode edit atau tidak
             openCards.forEach(id => {
                 const card = document.querySelector(`.riwayat-card[data-session-id="${id}"]`);
                 if (card) {
                     const detailNode = card.querySelector('.riwayat-detail');
                     if (detailNode) detailNode.classList.remove('hidden');
+                    
+                    // Kembalikan ke layar form edit jika sebelumnya sedang mengedit
+                    if (editCards.includes(id)) {
+                        const strukNode = card.querySelector('.hist-struk');
+                        const editNode = card.querySelector('.hist-edit');
+                        if(strukNode) strukNode.classList.add('hidden');
+                        if(editNode) editNode.classList.remove('hidden');
+                    }
                 }
             });
         }
