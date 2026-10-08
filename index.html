@@ -42,6 +42,7 @@
         }
 
         .gaming-gradient { background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); }
+        .btn-gradient { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
         .gaming-text {
             background: linear-gradient(135deg, #f87171 0%, #fb923c 100%);
             -webkit-background-clip: text;
@@ -86,19 +87,19 @@
                 <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><p>Memuat sesi...</p>
             </div>
 
-            <!-- Start Session Screen (Disesuaikan dengan foto) -->
+            <!-- Start Session Screen (Persis dengan gambar) -->
             <div id="sesi-start-container" class="hidden text-center py-12 flex flex-col items-center justify-center min-h-[55vh]">
-                <div class="w-20 h-20 rounded-full bg-slate-800/90 border border-slate-700/60 flex items-center justify-center mb-5 shadow-2xl shadow-orange-500/10">
-                    <i class="fa-solid fa-power-off text-3xl text-slate-400"></i>
+                <div class="w-24 h-24 rounded-full bg-slate-800/80 border border-slate-700/80 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-power-off text-4xl text-slate-300"></i>
                 </div>
                 <h2 class="text-2xl font-bold mb-2 text-white">Belum Ada Sesi Main</h2>
-                <p class="text-slate-400 text-sm max-w-xs mb-6 leading-relaxed">Mulai sesi baru untuk mulai mencatat waktu main dan tagihan teman-temanmu.</p>
-                <button onclick="startNewSession()" class="gaming-gradient hover:opacity-90 text-white font-bold py-3 px-7 rounded-full shadow-lg shadow-orange-500/20 transition-transform transform hover:scale-105 flex items-center gap-2">
+                <p class="text-slate-400 text-sm max-w-xs mb-8 leading-relaxed">Mulai sesi baru untuk mulai mencatat waktu main dan tagihan teman-temanmu.</p>
+                <button onclick="startNewSession()" class="btn-gradient hover:opacity-90 text-white font-bold py-3.5 px-8 rounded-full shadow-lg shadow-indigo-500/25 transition-transform transform hover:scale-105 flex items-center gap-2">
                     <i class="fa-solid fa-play text-xs"></i> Mulai Sesi Baru
                 </button>
             </div>
 
-            <!-- Active Session Area -->
+            <!-- Active Session Area (Tampil setelah Mulai Sesi diklik) -->
             <div id="sesi-active-container" class="hidden space-y-4">
                 
                 <!-- EDIT TANGGAL SESI AKTIF -->
