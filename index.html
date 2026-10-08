@@ -16,13 +16,13 @@
             position: relative;
         }
 
-        /* BACKGROUND LOGO KLUB SEPAKBOLA ACAK */
+        /* BACKGROUND LOGO KLUB SEPAKBOLA ACAK & DIPERBANYAK */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: -1;
-            opacity: 0.08; 
+            opacity: 0.08; /* Transparansi rendah agar teks tetap terbaca */
             pointer-events: none; 
             background-image: 
                 url('https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg'),
@@ -33,11 +33,18 @@
                 url('https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg'),
                 url('https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg'),
                 url('https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.svg'),
-                url('https://upload.wikimedia.org/wikipedia/en/f/f4/Atletico_Madrid_2017_logo.svg');
+                url('https://upload.wikimedia.org/wikipedia/en/f/f4/Atletico_Madrid_2017_logo.svg'),
+                url('https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg'),
+                url('https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg'),
+                url('https://upload.wikimedia.org/wikipedia/commons/1/15/Juventus_FC_2017_logo_%28black%29.svg'),
+                url('https://upload.wikimedia.org/wikipedia/commons/0/05/FC_Internazionale_Milano_2021.svg'),
+                url('https://upload.wikimedia.org/wikipedia/commons/6/67/Borussia_Dortmund_logo.svg');
             background-position: 
-                5% 10%, 85% 5%, 15% 45%, 85% 40%, 50% 25%, 75% 75%, 20% 85%, 50% 90%, 45% 60%;
+                5% 5%, 90% 5%, 10% 40%, 85% 35%, 50% 20%, 75% 65%, 25% 75%, 50% 85%, 45% 50%,
+                30% 10%, 70% 10%, 15% 95%, 85% 90%, 5% 60%;
             background-size: 
-                140px, 130px, 150px, 140px, 160px, 150px, 140px, 120px, 110px;
+                130px, 120px, 140px, 130px, 150px, 140px, 130px, 110px, 100px,
+                120px, 130px, 100px, 120px, 130px;
             background-repeat: no-repeat;
         }
 
@@ -86,19 +93,19 @@
                 <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><p>Memuat sesi...</p>
             </div>
 
-            <!-- Start Session Screen (Disesuaikan persis dengan foto referensi) -->
+            <!-- Start Session Screen -->
             <div id="sesi-start-container" class="hidden text-center py-12 flex flex-col items-center justify-center min-h-[55vh]">
-                <div class="w-[84px] h-[84px] rounded-full bg-slate-800/90 flex items-center justify-center mb-6 shadow-[0_0_35px_rgba(59,130,246,0.15)] relative border border-slate-700/50">
+                <div class="w-[84px] h-[84px] rounded-full bg-slate-800/90 flex items-center justify-center mb-6 shadow-[0_0_35px_rgba(249,115,22,0.15)] relative border border-slate-700/50">
                     <i class="fa-solid fa-power-off text-[32px] text-slate-400 relative z-10"></i>
                 </div>
                 <h2 class="text-[22px] font-bold mb-3 text-white tracking-wide">Belum Ada Sesi Main</h2>
                 <p class="text-slate-400 text-[13px] max-w-[280px] mb-8 leading-relaxed">Mulai sesi baru untuk mulai mencatat waktu main dan tagihan teman-temanmu.</p>
-                <button onclick="startNewSession()" class="bg-gradient-to-r from-blue-600 to-indigo-500 hover:opacity-90 text-white font-semibold py-3.5 px-8 rounded-full shadow-lg shadow-indigo-500/20 transition-transform transform hover:scale-105 flex items-center gap-2">
+                <button onclick="startNewSession()" class="gaming-gradient hover:opacity-90 text-white font-semibold py-3.5 px-8 rounded-full shadow-lg shadow-orange-500/20 transition-transform transform hover:scale-105 flex items-center gap-2">
                     <i class="fa-solid fa-play text-xs"></i> Mulai Sesi Baru
                 </button>
             </div>
 
-            <!-- Active Session Area (Tampilan saat sesi sudah mulai) -->
+            <!-- Active Session Area -->
             <div id="sesi-active-container" class="hidden space-y-4">
                 
                 <!-- EDIT TANGGAL SESI AKTIF -->
@@ -345,7 +352,13 @@
                 }
             });
 
-            historySessions.sort((a,b) => parseInt(b.id) - parseInt(a.id));
+            // Perbaikan Bug Urutan Riwayat: Mengurutkan murni berdasarkan Tanggal Descending (Terbaru di atas)
+            historySessions.sort((a, b) => {
+                const dateA = new Date(a.sessionDate || 0).getTime();
+                const dateB = new Date(b.sessionDate || 0).getTime();
+                if (dateA !== dateB) return dateB - dateA; 
+                return String(b.id).localeCompare(String(a.id));
+            });
 
             renderMainActiveSession();
             renderHistoryTab();
@@ -372,7 +385,7 @@
 
         // ---------------- Logika Tambah Pemain (Ceklis Bersamaan) ----------------
         window.openAddPlayerModal = (sessionId = 'current_active') => {
-            currentAddPlayerSessionId = sessionId;
+            currentAddPlayerSessionId = String(sessionId);
             selectedNewPlayers = [];
             
             const grid = document.getElementById('default-players-grid');
@@ -412,7 +425,7 @@
 
             if (namesToAdd.length === 0) return showToast("Pilih minimal 1 pemain", "error");
 
-            const session = currentAddPlayerSessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === currentAddPlayerSessionId);
+            const session = currentAddPlayerSessionId === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(currentAddPlayerSessionId));
             if (!session) return;
 
             let existingNames = session.players.map(p => p.name.toLowerCase());
@@ -454,17 +467,17 @@
         // ---------------- Generic CRUD / Actions ----------------
         window.removePlayer = async (sessionId, playerId) => {
             if(confirm("Yakin ingin menghapus pemain ini dari sesi?")) {
-                const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+                const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
                 if (!session) return;
                 const updatedPlayers = session.players.filter(p => p.id !== playerId);
-                await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
+                await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
                 showToast("Pemain dihapus", "success");
             }
         };
 
         window.deleteSession = async (sessionId) => {
             if(confirm("PERINGATAN: Yakin ingin MENGHAPUS SELURUH SESI INI dari riwayat?")) {
-                await deleteDoc(doc(db, 'ps_sessions', sessionId));
+                await deleteDoc(doc(db, 'ps_sessions', String(sessionId)));
                 showToast("Sesi berhasil dihapus", "success");
             }
         };
@@ -473,7 +486,7 @@
              if (!newDateStr) return;
              try {
                  const title = formatDateToTitle(newDateStr); 
-                 await updateDoc(doc(db, 'ps_sessions', sessionId), { 
+                 await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { 
                      sessionDate: newDateStr, 
                      title: title 
                  });
@@ -482,7 +495,7 @@
         };
 
         window.togglePlayStatus = async (sessionId, playerId, action) => {
-             const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+             const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
              if (!session) return;
              const updatedPlayers = session.players.map(p => {
                  if (p.id === playerId) {
@@ -497,11 +510,11 @@
                  }
                  return p;
              });
-             await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
+             await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
         };
 
         window.updateTimeLog = async (sessionId, playerId, logIndex, field, timeString) => {
-            const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+            const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
             if (!session) return;
             const updatedPlayers = session.players.map(p => {
                 if (p.id === playerId) {
@@ -518,22 +531,22 @@
                 }
                 return p;
             });
-            await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
+            await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
         };
 
         window.updateTrophy = async (sessionId, playerId, delta) => {
-            const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+            const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
             if (!session) return;
             const updatedPlayers = session.players.map(p => {
                  if (p.id === playerId) return { ...p, trophies: Math.max(0, (p.trophies || 0) + delta) };
                  return p;
              });
-            await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
+            await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
         };
 
         window.updateTotalSewa = async (sessionId, value) => {
              const total = parseInt(value) || 0;
-             await updateDoc(doc(db, 'ps_sessions', sessionId), { totalSewa: total });
+             await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { totalSewa: total });
         };
 
         window.stopAllTimers = async () => {
@@ -547,13 +560,13 @@
         };
 
         window.togglePaymentStatus = async (sessionId, playerId) => {
-            const session = historySessions.find(s => s.id === sessionId);
+            const session = historySessions.find(s => String(s.id) === String(sessionId));
             if (!session) return;
             const updatedPlayers = session.players.map(p => {
                 if (p.id === playerId) return { ...p, isPaid: !p.isPaid };
                 return p;
             });
-            await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
+            await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
         };
 
         // ---------------- UI Renderers ----------------
@@ -636,14 +649,19 @@
             return html;
         }
 
-        window.toggleHistoryDetails = (id) => { document.getElementById(`hist-details-${id}`).classList.toggle('hidden'); };
+        // Perbaikan Bug Klik Buka Detail Riwayat
+        window.toggleHistoryDetails = (id) => { 
+            const domId = String(id).replace(/[^a-zA-Z0-9]/g, '_');
+            document.getElementById(`hist-details-${domId}`).classList.toggle('hidden'); 
+        };
         window.toggleEditMode = (id, isEdit) => {
+            const domId = String(id).replace(/[^a-zA-Z0-9]/g, '_');
             if(isEdit) {
-                document.getElementById(`hist-struk-${id}`).classList.add('hidden');
-                document.getElementById(`hist-edit-${id}`).classList.remove('hidden');
+                document.getElementById(`hist-struk-${domId}`).classList.add('hidden');
+                document.getElementById(`hist-edit-${domId}`).classList.remove('hidden');
             } else {
-                document.getElementById(`hist-edit-${id}`).classList.add('hidden');
-                document.getElementById(`hist-struk-${id}`).classList.remove('hidden');
+                document.getElementById(`hist-edit-${domId}`).classList.add('hidden');
+                document.getElementById(`hist-struk-${domId}`).classList.remove('hidden');
             }
         };
 
@@ -656,6 +674,8 @@
             let html = '';
             
             historySessions.forEach(session => {
+                const domId = String(session.id).replace(/[^a-zA-Z0-9]/g, '_');
+                
                 let maxTrophy = 0;
                 session.players.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
                 let champs = [];
@@ -720,10 +740,10 @@
                         </div>
                     </div>
                     
-                    <div id="hist-details-${session.id}" class="hidden">
+                    <div id="hist-details-${domId}" class="hidden">
                         
                         <!-- STRUK VIEW -->
-                        <div id="hist-struk-${session.id}" class="p-4 border-t border-slate-700 bg-slate-800/90">
+                        <div id="hist-struk-${domId}" class="p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="mb-4">
                                 <h4 class="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider text-center">Struk Sesi & Pembayaran</h4>
                                 <div class="max-h-64 overflow-y-auto hide-scrollbar">
@@ -741,7 +761,7 @@
                         </div>
 
                         <!-- EDIT VIEW -->
-                        <div id="hist-edit-${session.id}" class="hidden p-4 border-t border-slate-700 bg-slate-800/90">
+                        <div id="hist-edit-${domId}" class="hidden p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="font-bold text-slate-300 text-sm"><i class="fa-solid fa-pen-to-square text-orange-400 mr-1"></i> Mode Edit</h4>
                                 <button onclick="toggleEditMode('${session.id}', false)" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition">Selesai Edit</button>
@@ -820,11 +840,12 @@
         // ---------------- Modal Review & Simpan Sesi Aktif ----------------
         window.closeModal = () => { document.getElementById('modal-result').classList.add('hidden'); };
 
-        window.showReviewModal = (sessionId) => { calculateAndShowModal(sessionId, false); };
+        // Perbaikan Bug Data Struk Modal
+        window.showReviewModal = (sessionId) => { calculateAndShowModal(String(sessionId), false); };
         window.showFinalizeModal = () => { calculateAndShowModal('current_active', true); };
 
         function calculateAndShowModal(sessionId, isFinalizing) {
-            const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+            const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === sessionId);
             if (!session || session.players.length === 0) return showToast("Tidak ada pemain", "error");
 
             const totalSewa = session.totalSewa || 0;
@@ -900,7 +921,9 @@
                     endTime: Date.now() 
                 };
 
-                await setDoc(doc(db, 'ps_sessions', Date.now().toString()), finalData);
+                // Perbaikan: Pakai ID dengan prefix string untuk mencegah bug JS
+                const uniqueId = `session_${Date.now()}`;
+                await setDoc(doc(db, 'ps_sessions', uniqueId), finalData);
                 await deleteDoc(doc(db, 'ps_sessions', 'current_active'));
                 
                 closeModal();
