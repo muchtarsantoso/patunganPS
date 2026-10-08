@@ -86,14 +86,15 @@
                 <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><p>Memuat sesi...</p>
             </div>
 
-            <!-- Start Session -->
-            <div id="sesi-start-container" class="hidden text-center py-10">
-                <div class="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20">
-                    <i class="fa-solid fa-power-off text-4xl text-slate-400"></i>
+            <!-- Start Session Screen (Disesuaikan dengan foto) -->
+            <div id="sesi-start-container" class="hidden text-center py-12 flex flex-col items-center justify-center min-h-[55vh]">
+                <div class="w-20 h-20 rounded-full bg-slate-800/90 border border-slate-700/60 flex items-center justify-center mb-5 shadow-2xl shadow-orange-500/10">
+                    <i class="fa-solid fa-power-off text-3xl text-slate-400"></i>
                 </div>
-                <h2 class="text-xl font-bold mb-2">Belum Ada Sesi Main</h2>
-                <button onclick="startNewSession()" class="gaming-gradient hover:opacity-90 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 mt-4">
-                    <i class="fa-solid fa-play mr-2"></i> Mulai Sesi Baru
+                <h2 class="text-2xl font-bold mb-2 text-white">Belum Ada Sesi Main</h2>
+                <p class="text-slate-400 text-sm max-w-xs mb-6 leading-relaxed">Mulai sesi baru untuk mulai mencatat waktu main dan tagihan teman-temanmu.</p>
+                <button onclick="startNewSession()" class="gaming-gradient hover:opacity-90 text-white font-bold py-3 px-7 rounded-full shadow-lg shadow-orange-500/20 transition-transform transform hover:scale-105 flex items-center gap-2">
+                    <i class="fa-solid fa-play text-xs"></i> Mulai Sesi Baru
                 </button>
             </div>
 
@@ -182,7 +183,7 @@
         </div>
     </main>
 
-    <!-- MODAL: Confirm Add Player (Bisa Banyak) -->
+    <!-- MODAL: Confirm Add Player -->
     <div id="modal-add-time" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex flex-col justify-center items-center p-4">
         <div class="bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-700 p-6">
             <h2 class="text-xl font-bold text-center mb-4">Pilih Pemain</h2>
@@ -215,7 +216,7 @@
         </div>
     </div>
 
-    <!-- MODAL: Receipt / Struk (Hanya untuk Sesi Aktif) -->
+    <!-- MODAL: Receipt / Struk -->
     <div id="modal-result" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex flex-col justify-end sm:justify-center items-center">
         <div class="bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-700">
             <div class="p-6">
@@ -271,7 +272,6 @@
         let historySessions = [];
         let clockInterval = null;
         
-        // Data Tambah Pemain
         const defaultPlayerNames = ["Jun", "Muchtar", "Ekky", "Ramdan", "Rendy", "Widi"];
         let selectedNewPlayers = [];
         let currentAddPlayerSessionId = null;
@@ -375,7 +375,6 @@
             currentAddPlayerSessionId = sessionId;
             selectedNewPlayers = [];
             
-            // Render tombol ceklis
             const grid = document.getElementById('default-players-grid');
             grid.innerHTML = defaultPlayerNames.map(name => `
                 <button onclick="togglePlayerChip(this, '${name}')" class="border border-slate-600 text-slate-300 px-3 py-1.5 rounded-full text-sm font-semibold transition-all">
@@ -416,7 +415,6 @@
             const session = currentAddPlayerSessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === currentAddPlayerSessionId);
             if (!session) return;
 
-            // Filter yg belum ada
             let existingNames = session.players.map(p => p.name.toLowerCase());
             let finalNames = namesToAdd.filter(n => !existingNames.includes(n.toLowerCase()));
 
@@ -441,7 +439,7 @@
                 timeLogs: [{ start: startTime, end: null }],
                 trophies: 0,
                 isActive: true,
-                isPaid: false // Default selalu Belum Lunas
+                isPaid: false 
             }));
 
             try {
@@ -562,11 +560,13 @@
         function renderMainActiveSession() {
             if (!activeSession) {
                 document.getElementById('sesi-start-container').classList.remove('hidden');
+                document.getElementById('sesi-start-container').classList.add('flex');
                 document.getElementById('sesi-active-container').classList.add('hidden');
                 if(clockInterval) { clearInterval(clockInterval); clockInterval = null; }
                 return;
             }
             document.getElementById('sesi-start-container').classList.add('hidden');
+            document.getElementById('sesi-start-container').classList.remove('flex');
             document.getElementById('sesi-active-container').classList.remove('hidden');
             
             document.getElementById('active-session-date').value = activeSession.sessionDate || '';
@@ -636,7 +636,6 @@
             return html;
         }
 
-        // Toggles History views
         window.toggleHistoryDetails = (id) => { document.getElementById(`hist-details-${id}`).classList.toggle('hidden'); };
         window.toggleEditMode = (id, isEdit) => {
             if(isEdit) {
@@ -657,14 +656,12 @@
             let html = '';
             
             historySessions.forEach(session => {
-                // 1. Hitung Juara
                 let maxTrophy = 0;
                 session.players.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
                 let champs = [];
                 if (maxTrophy > 0) champs = session.players.filter(p => (p.trophies||0) === maxTrophy).map(p => p.name);
                 let champHtml = champs.length > 0 ? `<p class="text-xs text-yellow-500 mt-1 font-bold"><i class="fa-solid fa-crown"></i> Juara: ${champs.join(', ')}</p>` : '';
 
-                // 2. Kalkulasi Data Struk
                 const totalSewa = session.totalSewa || 0;
                 let totalIndividualMins = 0; 
                 let overallMins = 0;
@@ -710,7 +707,6 @@
                     </div>`;
                 });
 
-                // 3. Render HTML List Riwayat
                 html += `
                 <div class="bg-slate-800/90 rounded-2xl border border-slate-700 overflow-hidden shadow-lg backdrop-blur-sm">
                     <div class="p-4 bg-slate-900/50 cursor-pointer hover:bg-slate-800 transition" onclick="toggleHistoryDetails('${session.id}')">
@@ -744,7 +740,7 @@
                             </div>
                         </div>
 
-                        <!-- EDIT VIEW (Mirip Sesi Aktif) -->
+                        <!-- EDIT VIEW -->
                         <div id="hist-edit-${session.id}" class="hidden p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="font-bold text-slate-300 text-sm"><i class="fa-solid fa-pen-to-square text-orange-400 mr-1"></i> Mode Edit</h4>
