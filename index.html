@@ -283,9 +283,6 @@
         let selectedNewPlayers = [];
         let currentAddPlayerSessionId = null;
 
-        // Mencegah akordeon tertutup sendiri ketika database diupdate
-        let openHistoryIds = new Set();
-
         // UI Tabs
         window.switchTab = (tab) => {
             ['sesi', 'riwayat', 'klasemen'].forEach(t => {
@@ -562,19 +559,19 @@
             showToast("Semua waktu pemain dihentikan", "success");
         };
 
-        // PERBAIKAN KLIK TOMBOL LUNAS
-        window.togglePaymentStatus = async (event, sessionId, playerId) => {
-            event.stopPropagation(); // Mencegah merambat ke elemen lain
-            const session = historySessions.find(s => String(s.id) === String(sessionId));
-            if (!session) return;
-            const updatedPlayers = session.players.map(p => {
-                if (p.id === playerId) return { ...p, isPaid: !p.isPaid };
-                return p;
-            });
+        // Fungsi toggle LUNAS/BELUM LUNAS
+        window.togglePaymentStatus = async (sessionId, playerId) => {
             try {
+                const session = historySessions.find(s => String(s.id) === String(sessionId));
+                if (!session) return;
+                
+                const updatedPlayers = session.players.map(p => {
+                    if (p.id === playerId) return { ...p, isPaid: !p.isPaid }; // Membalikkan status (true/false)
+                    return p;
+                });
+
                 await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
-                showToast("Status pembayaran diperbarui", "success");
-            } catch(e) {
+            } catch (error) {
                 showToast("Gagal mengubah status", "error");
             }
         };
@@ -659,23 +656,24 @@
             return html;
         }
 
-        // FUNGSI KHUSUS MENYIMPAN STATE AKORDEON AGAR TIDAK TUTUP SENDIRI
-        window.toggleHistoryDetails = (id) => { 
-            const domId = String(id).replace(/[^a-zA-Z0-9]/g, '_');
-            const el = document.getElementById(`hist-details-${domId}`);
-            if (el) {
-                el.classList.toggle('hidden');
-                if(el.classList.contains('hidden')) openHistoryIds.delete(String(id));
-                else openHistoryIds.add(String(id));
-            }
-        };
-
+        // ================= PERBAIKAN BUG UTAMA =================
         function renderHistoryTab() {
             const listEl = document.getElementById('riwayat-list');
+
+            // 1. Simpan Memory: Ingat kartu/sesi riwayat mana saja yang sedang "Terbuka/Expanded"
+            const openCards = [];
+            document.querySelectorAll('.riwayat-card').forEach(card => {
+                const detailNode = card.querySelector('.riwayat-detail');
+                if (detailNode && !detailNode.classList.contains('hidden')) {
+                    openCards.push(card.dataset.sessionId);
+                }
+            });
+
             if (historySessions.length === 0) {
                 listEl.innerHTML = `<div class="text-center py-10 text-slate-500">Belum ada riwayat sesi.</div>`;
                 return;
             }
+            
             let html = '';
             
             historySessions.forEach(session => {
@@ -712,14 +710,12 @@
                     totalBillSum += totalBayar;
                     
                     const isPaid = p.isPaid ? true : false;
-                    
-                    // PERBAIKAN TOMBOL LUNAS: Diperbesar px dan z-index diamankan
                     const statusBadge = isPaid 
-                        ? `<button onclick="togglePaymentStatus(event, '${session.id}', '${p.id}')" class="text-[11px] bg-green-500/20 text-green-400 px-3 py-1.5 rounded-md font-bold mt-2 border border-green-500/50 hover:bg-green-500/40 transition shadow-sm cursor-pointer relative z-10"><i class="fa-solid fa-check mr-1"></i>LUNAS</button>`
-                        : `<button onclick="togglePaymentStatus(event, '${session.id}', '${p.id}')" class="text-[11px] bg-red-500/20 text-red-400 px-3 py-1.5 rounded-md font-bold mt-2 border border-red-500/50 hover:bg-red-500/40 transition shadow-sm cursor-pointer relative z-10"><i class="fa-solid fa-xmark mr-1"></i>BELUM LUNAS</button>`;
+                        ? `<button onclick="togglePaymentStatus('${session.id}', '${p.id}')" class="text-[10px] bg-green-500/20 text-green-400 px-3 py-1 rounded-md font-bold mt-1 border border-green-500/50 hover:bg-green-500/40 transition focus:outline-none">LUNAS</button>`
+                        : `<button onclick="togglePaymentStatus('${session.id}', '${p.id}')" class="text-[10px] bg-red-500/20 text-red-400 px-3 py-1 rounded-md font-bold mt-1 border border-red-500/50 hover:bg-red-500/40 transition focus:outline-none">BELUM LUNAS</button>`;
                     
                     strukHtml += `
-                    <div class="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 mb-3">
+                    <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 mb-2">
                         <div>
                             <div class="font-bold text-sm text-slate-200">${p.name} ${champs.includes(p.name) ? '<i class="fa-solid fa-crown text-yellow-500 text-xs ml-1"></i>' : ''}</div>
                             <div class="text-xs text-slate-400 mt-0.5">${formatDuration(p.calcDuration)} main</div>
@@ -732,13 +728,11 @@
                     </div>`;
                 });
 
-                const domId = String(session.id).replace(/[^a-zA-Z0-9]/g, '_');
-                const isHiddenClass = openHistoryIds.has(String(session.id)) ? '' : 'hidden';
-
                 html += `
-                <div class="bg-slate-800/90 rounded-2xl border border-slate-700 overflow-hidden shadow-lg backdrop-blur-sm riwayat-card mb-4">
+                <div class="bg-slate-800/90 rounded-2xl border border-slate-700 overflow-hidden shadow-lg backdrop-blur-sm riwayat-card mb-4" data-session-id="${session.id}">
                     
-                    <div class="p-4 bg-slate-900/50 cursor-pointer hover:bg-slate-800 transition" onclick="toggleHistoryDetails('${session.id}')">
+                    <!-- KEPALA KARTU RIWAYAT YG BISA DI KLIK -->
+                    <div class="p-4 bg-slate-900/50 cursor-pointer hover:bg-slate-800 transition" onclick="this.nextElementSibling.classList.toggle('hidden')">
                         <div class="flex justify-between items-start">
                             <div>
                                 <h3 class="font-bold text-orange-400">${session.title}</h3>
@@ -749,15 +743,16 @@
                         </div>
                     </div>
                     
-                    <div id="hist-details-${domId}" class="${isHiddenClass} riwayat-detail">
+                    <!-- ISI DETAIL KARTU -->
+                    <div class="hidden riwayat-detail">
                         
-                        <!-- STRUK VIEW (SCROLL DIHAPUS, TAMPIL FULL) -->
+                        <!-- STRUK VIEW -->
                         <div class="hist-struk p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="mb-4">
                                 <h4 class="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider text-center">Struk Sesi & Pembayaran</h4>
                                 
-                                <!-- Container di bawah tidak dibatasi tinggi lagi -->
-                                <div class="w-full mb-3">
+                                <!-- Dihilangkan batas tinggi (Scroll) agar langsung tampil semua penuh ke bawah -->
+                                <div class="space-y-2">
                                     ${strukHtml}
                                 </div>
 
@@ -771,8 +766,8 @@
                                     const container = this.closest('.riwayat-detail');
                                     container.querySelector('.hist-struk').classList.add('hidden');
                                     container.querySelector('.hist-edit').classList.remove('hidden');
-                                " class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
-                                <button onclick="deleteSession('${session.id}')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-trash"></i></button>
+                                " class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
+                                <button onclick="deleteSession('${session.id}')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
 
@@ -784,7 +779,7 @@
                                     const container = this.closest('.riwayat-detail');
                                     container.querySelector('.hist-edit').classList.add('hidden');
                                     container.querySelector('.hist-struk').classList.remove('hidden');
-                                " class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition shadow-sm">Selesai Edit</button>
+                                " class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition">Selesai Edit</button>
                             </div>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700">
@@ -818,6 +813,15 @@
                 </div>`;
             });
             listEl.innerHTML = html;
+
+            // 2. Kembalikan Memory: Buka kembali kartu yang sebelumnya terbuka secara otomatis
+            openCards.forEach(id => {
+                const card = document.querySelector(`.riwayat-card[data-session-id="${id}"]`);
+                if (card) {
+                    const detailNode = card.querySelector('.riwayat-detail');
+                    if (detailNode) detailNode.classList.remove('hidden');
+                }
+            });
         }
 
         function computeAndRenderLeaderboard() {
