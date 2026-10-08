@@ -383,7 +383,7 @@
             } catch (error) { showToast("Gagal memulai sesi", "error"); }
         };
 
-        // ---------------- Logika Tambah Pemain (Ceklis Bersamaan) ----------------
+        // ---------------- Logika Tambah Pemain ----------------
         window.openAddPlayerModal = (sessionId = 'current_active') => {
             currentAddPlayerSessionId = String(sessionId);
             selectedNewPlayers = [];
@@ -476,27 +476,35 @@
             }
         };
 
-        // PERBAIKAN: Penambahan Try-Catch dan Optimistic UI untuk fungsi Hapus Sesi
-        window.deleteSession = async (sessionId) => {
-            if(confirm("PERINGATAN: Yakin ingin MENGHAPUS SELURUH SESI INI dari riwayat?")) {
+        // PERBAIKAN TOTAL: Menghapus Optimistic UI dan Mengandalkan Firestore Real-time Sync
+        window.deleteSession = async (sessionId, btnEl) => {
+            if(confirm("PERINGATAN: Yakin ingin MENGHAPUS PERMANEN seluruh sesi ini dari riwayat?")) {
                 try {
-                    // 1. Optimistic UI Update: Langsung sembunyikan elemen secara instan agar UI terasa cepat
-                    const cardToRemove = document.querySelector(`.riwayat-card[data-session-id="${sessionId}"]`);
-                    if (cardToRemove) {
-                        cardToRemove.style.display = 'none';
+                    // Ubah tombol jadi loading
+                    if(btnEl) {
+                        btnEl.disabled = true;
+                        btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghapus...';
+                        btnEl.classList.add('opacity-50', 'cursor-not-allowed');
                     }
-
-                    // 2. Lakukan penghapusan di database Firebase
-                    await deleteDoc(doc(db, 'ps_sessions', String(sessionId)));
-                    showToast("Sesi berhasil dihapus", "success");
+                    
+                    const cleanId = String(sessionId).trim();
+                    const docRef = doc(db, 'ps_sessions', cleanId);
+                    
+                    // Tunggu konfirmasi murni dari Firebase Database
+                    await deleteDoc(docRef);
+                    showToast("Sesi berhasil dihapus secara permanen!", "success");
+                    
+                    // TIDAK PERLU manual hapus di layar, Firebase onSnapshot akan otomatis
+                    // membaca perubahan dan menghilangkan kartu yg terhapus secara akurat
                 } catch (error) {
                     console.error("Gagal menghapus sesi: ", error);
-                    showToast("Gagal menghapus sesi. Silakan coba lagi.", "error");
+                    showToast("Gagal menghapus sesi dari database.", "error");
                     
-                    // Jika gagal dari server, kembalikan tampilan elemen tadi
-                    const cardToRemove = document.querySelector(`.riwayat-card[data-session-id="${sessionId}"]`);
-                    if (cardToRemove) {
-                        cardToRemove.style.display = 'block';
+                    // Kembalikan tombol jika gagal
+                    if(btnEl) {
+                        btnEl.disabled = false;
+                        btnEl.innerHTML = '<i class="fa-solid fa-trash"></i> Hapus Sesi';
+                        btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
                     }
                 }
             }
@@ -773,7 +781,9 @@
                                     container.querySelector('.hist-struk').classList.add('hidden');
                                     container.querySelector('.hist-edit').classList.remove('hidden');
                                 " class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
-                                <button onclick="deleteSession('${session.id}')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-trash"></i> Hapus Sesi</button>
+                                
+                                <!-- TOMBOL HAPUS YG DIPERBARUI -->
+                                <button onclick="deleteSession('${session.id}', this)" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2 whitespace-nowrap"><i class="fa-solid fa-trash"></i> Hapus Sesi</button>
                             </div>
                         </div>
 
