@@ -37,6 +37,12 @@
         input[type="number"] {
             -moz-appearance: textfield;
         }
+        /* Custom Time Input Indicator */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            opacity: 0.5;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col pb-20">
@@ -87,7 +93,16 @@
                 <div class="bg-slate-800 rounded-2xl p-4 shadow-lg border border-slate-700">
                     <h3 class="font-bold text-sm text-slate-400 mb-3 uppercase tracking-wider">Tambah Pemain</h3>
                     <div class="flex gap-2">
-                        <input type="text" id="new-player-name" placeholder="Nama Pemain..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
+                        <!-- Data List (Dropdown otomatis) -->
+                        <datalist id="default-players">
+                            <option value="Jun"></option>
+                            <option value="Muchtar"></option>
+                            <option value="Ekky"></option>
+                            <option value="Ramdan"></option>
+                            <option value="Rendy"></option>
+                            <option value="Widi"></option>
+                        </datalist>
+                        <input type="text" list="default-players" id="new-player-name" placeholder="Pilih / Ketik Nama..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
                         <button onclick="addPlayer()" class="bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-4 py-2 font-bold transition-colors">
                             <i class="fa-solid fa-plus"></i>
                         </button>
@@ -163,8 +178,8 @@
                         <span class="font-bold" id="receipt-total-time">0j 0m</span>
                     </div>
                     <div class="flex justify-between items-center text-lg">
-                        <span class="text-slate-300 font-medium">Total Terkumpul</span>
-                        <span class="font-bold text-green-400" id="receipt-total-collected">Rp 0</span>
+                        <span class="text-slate-300 font-medium">Total Tagihan (PS)</span>
+                        <span class="font-bold text-blue-400" id="receipt-total-collected">Rp 0</span>
                     </div>
                 </div>
 
@@ -186,7 +201,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, updateDoc, increment, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // 1. Konfigurasi Firebase Anda yang BENAR
+        // Konfigurasi Firebase Asli Anda
         const firebaseConfig = {
             apiKey: "AIzaSyCCNcZD9LkFhDjgli7AxlcyXPdIgU55j50",
             authDomain: "patungan-ps.firebaseapp.com",
@@ -197,7 +212,6 @@
             measurementId: "G-SHPFT2P894"
         };
         
-        // 2. Inisialisasi Aplikasi & Database
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
@@ -226,8 +240,9 @@
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number || 0);
         };
         
-        const formatTime = (timestamp) => {
-            if (!timestamp) return '--:--';
+        // Return jam untuk input time HTML (HH:MM)
+        const formatTimeInput = (timestamp) => {
+            if (!timestamp) return '';
             const d = new Date(timestamp);
             return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
         };
@@ -291,7 +306,7 @@
                     renderActiveSession();
                     
                     if(!clockInterval) {
-                        clockInterval = setInterval(renderActiveSession, 60000); // Update duration every minute
+                        clockInterval = setInterval(renderActiveSession, 60000); 
                     }
                 } else {
                     activeSession = null;
@@ -308,7 +323,6 @@
         let statsData = [];
         function listenToStats() {
             if (statsUnsubscribe) statsUnsubscribe();
-            
             const colRef = collection(db, statsColPath);
             statsUnsubscribe = onSnapshot(colRef, (snapshot) => {
                 statsData = [];
@@ -316,8 +330,6 @@
                     statsData.push({ id: doc.id, ...doc.data() });
                 });
                 renderKlasemen();
-            }, (error) => {
-                 console.error("Error listening to stats:", error);
             });
         }
 
@@ -347,17 +359,16 @@
                 return;
             }
 
+            // Jika pemain sudah ada, beritahu untuk klik Mulai Lagi di kartunya
             if (activeSession.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-                showToast("Pemain sudah ada di sesi ini", "error");
+                showToast("Pemain sudah ada. Klik 'Mulai Lagi' di kartunya.", "error");
                 return;
             }
 
             const newPlayer = {
                 id: 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
                 name: name,
-                startTime: Date.now(),
-                endTime: null,
-                extraCost: 0,
+                timeLogs: [{ start: Date.now(), end: null }], // Support multi-sesi per pemain
                 trophies: 0,
                 isActive: true
             };
@@ -365,9 +376,7 @@
             const updatedPlayers = [...activeSession.players, newPlayer];
             
             try {
-                await updateDoc(doc(db, sessionDocPath), {
-                    players: updatedPlayers
-                });
+                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
                 nameInput.value = '';
                 showToast(`${name} bergabung!`, "success");
             } catch (error) {
@@ -376,11 +385,23 @@
             }
         };
 
-        window.stopPlayer = async (playerId) => {
+        // Fungsi stop (Selesai) atau start (Mulai Lagi)
+        window.togglePlayStatus = async (playerId, action) => {
              if (!activeSession) return;
              const updatedPlayers = activeSession.players.map(p => {
-                 if (p.id === playerId && p.isActive) {
-                     return { ...p, endTime: Date.now(), isActive: false };
+                 if (p.id === playerId) {
+                     let logs = p.timeLogs || [{start: p.startTime, end: p.endTime}];
+                     
+                     if (action === 'stop') {
+                         // Tutup log waktu yang masih berjalan
+                         logs = logs.map(l => l.end === null ? { ...l, end: Date.now() } : l);
+                         return { ...p, timeLogs: logs, isActive: false };
+                     } 
+                     else if (action === 'start') {
+                         // Buka log waktu baru
+                         logs.push({ start: Date.now(), end: null });
+                         return { ...p, timeLogs: logs, isActive: true };
+                     }
                  }
                  return p;
              });
@@ -388,15 +409,53 @@
              try {
                 await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
              } catch (error) {
-                 showToast("Gagal menghentikan pemain", "error");
+                 showToast("Gagal mengubah status", "error");
              }
+        };
+
+        // Fungsi manual ubah jam melalui input time
+        window.updateTimeLog = async (playerId, logIndex, field, timeString) => {
+            if (!activeSession) return;
+            const updatedPlayers = activeSession.players.map(p => {
+                if (p.id === playerId) {
+                    let logs = p.timeLogs ? [...p.timeLogs] : [{start: p.startTime, end: p.endTime}];
+                    let log = {...logs[logIndex]};
+                    
+                    if (timeString) {
+                        // Gabungkan hari ini dengan jam yang di-edit
+                        let dateObj = new Date(log[field] || Date.now());
+                        let [hours, minutes] = timeString.split(':');
+                        dateObj.setHours(parseInt(hours, 10));
+                        dateObj.setMinutes(parseInt(minutes, 10));
+                        dateObj.setSeconds(0);
+                        log[field] = dateObj.getTime();
+                    } else if (field === 'end') {
+                        // Jika jam pulang dikosongkan (di-clear), maka dianggap lanjut main
+                        log[field] = null; 
+                    }
+                    
+                    logs[logIndex] = log;
+                    
+                    // Cek apakah ada sesi yang masih berjalan (end = null)
+                    let isActive = logs.some(l => l.end === null);
+
+                    return { ...p, timeLogs: logs, isActive: isActive };
+                }
+                return p;
+            });
+
+            try {
+                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
+            } catch (error) {
+                console.error("Gagal update waktu manual");
+            }
         };
 
         window.updateTrophy = async (playerId, delta) => {
             if (!activeSession) return;
             const updatedPlayers = activeSession.players.map(p => {
                  if (p.id === playerId) {
-                     const newTotal = Math.max(0, p.trophies + delta);
+                     const newTotal = Math.max(0, (p.trophies || 0) + delta);
                      return { ...p, trophies: newTotal };
                  }
                  return p;
@@ -405,22 +464,6 @@
                 await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
              } catch (e) {
                 showToast("Gagal update trofi", "error");
-             }
-        };
-
-        window.updateExtraCost = async (playerId, value) => {
-            if (!activeSession) return;
-            const cost = parseInt(value) || 0;
-            const updatedPlayers = activeSession.players.map(p => {
-                 if (p.id === playerId) {
-                     return { ...p, extraCost: cost };
-                 }
-                 return p;
-             });
-             try {
-                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
-             } catch (e) {
-                 console.error(e);
              }
         };
 
@@ -442,46 +485,63 @@
 
             let html = '';
             activeSession.players.forEach((p) => {
-                const isPlaying = p.isActive;
-                const durationMins = calculateDurationMin(p.startTime, p.endTime);
+                // Konversi data lama jika ada
+                const logs = p.timeLogs || [{start: p.startTime, end: p.endTime}];
+                let totalDurationMins = 0;
+                let isPlaying = logs.some(l => l.end === null);
+
+                // Buat list kolom jam
+                let logsHtml = '';
+                logs.forEach((log, idx) => {
+                    let dur = calculateDurationMin(log.start, log.end);
+                    totalDurationMins += dur;
+                    
+                    logsHtml += `
+                    <div class="flex items-center gap-2 mt-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
+                        <input type="time" value="${formatTimeInput(log.start)}" onchange="updateTimeLog('${p.id}', ${idx}, 'start', this.value)" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:border-blue-500 outline-none w-24 text-center">
+                        <span class="text-slate-500">-</span>
+                        <input type="time" value="${log.end ? formatTimeInput(log.end) : ''}" onchange="updateTimeLog('${p.id}', ${idx}, 'end', this.value)" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:border-blue-500 outline-none w-24 text-center" ${!log.end ? 'placeholder="Sedang Main..."' : ''}>
+                        <span class="text-xs text-slate-400 font-semibold ml-auto whitespace-nowrap">${formatDuration(dur)}</span>
+                    </div>
+                    `;
+                });
                 
                 html += `
                 <div class="bg-slate-800 rounded-xl p-4 shadow border ${isPlaying ? 'border-blue-500/30 shadow-blue-900/20' : 'border-slate-700 opacity-80'} transition-all">
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <h4 class="font-bold text-lg">${p.name}</h4>
-                                ${isPlaying 
-                                    ? '<span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' 
-                                    : '<span class="h-2 w-2 rounded-full bg-slate-500"></span>'
-                                }
-                            </div>
-                            <div class="text-xs text-slate-400 mt-1">
-                                <i class="fa-regular fa-clock"></i> ${formatTime(p.startTime)} - ${isPlaying ? 'Sekarang' : formatTime(p.endTime)} 
-                                <span class="ml-2 font-semibold text-slate-300">(${formatDuration(durationMins)})</span>
-                            </div>
+                    
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-bold text-lg">${p.name}</h4>
+                            ${isPlaying 
+                                ? '<span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' 
+                                : '<span class="h-2 w-2 rounded-full bg-slate-500"></span>'
+                            }
                         </div>
+                        
                         ${isPlaying ? `
-                            <button onclick="stopPlayer('${p.id}')" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                            <button onclick="togglePlayStatus('${p.id}', 'stop')" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors">
                                 <i class="fa-solid fa-stop"></i> Selesai
                             </button>
                         ` : `
-                             <span class="text-xs px-3 py-1.5 rounded-lg bg-slate-700 text-slate-400 font-semibold"><i class="fa-solid fa-check"></i> Selesai</span>
+                            <button onclick="togglePlayStatus('${p.id}', 'start')" class="bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                <i class="fa-solid fa-play"></i> Mulai Lagi
+                            </button>
                         `}
                     </div>
+
+                    <!-- Log Waktu Datang & Pulang yang bisa diedit -->
+                    <div class="mb-4">
+                        ${logsHtml}
+                        <div class="text-xs text-slate-400 mt-2 text-right w-full">Total Main: <span class="text-slate-200 font-bold">${formatDuration(totalDurationMins)}</span></div>
+                    </div>
                     
-                    <div class="grid grid-cols-2 gap-4 mt-4">
-                        <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
-                            <label class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Makan/Minum (Rp)</label>
-                            <input type="number" value="${p.extraCost || ''}" placeholder="0" onblur="updateExtraCost('${p.id}', this.value)" class="w-full bg-transparent text-sm font-semibold focus:outline-none text-white">
-                        </div>
-                        
-                        <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-                            <label class="text-[10px] text-slate-500 uppercase font-bold block mb-1 text-center">Trofi Match</label>
-                            <div class="flex items-center justify-between px-2">
-                                <button onclick="updateTrophy('${p.id}', -1)" class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition text-sm">-</button>
-                                <span class="font-bold text-yellow-500">${p.trophies}</span>
-                                <button onclick="updateTrophy('${p.id}', 1)" class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition text-sm">+</button>
+                    <div class="border-t border-slate-700/50 pt-3">
+                        <div class="bg-slate-900/50 p-2 rounded-lg flex items-center justify-between">
+                            <label class="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Trofi Match</label>
+                            <div class="flex items-center gap-4">
+                                <button onclick="updateTrophy('${p.id}', -1)" class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition text-sm">-</button>
+                                <span class="font-bold text-yellow-500 text-lg w-4 text-center">${p.trophies || 0}</span>
+                                <button onclick="updateTrophy('${p.id}', 1)" class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition text-sm">+</button>
                             </div>
                         </div>
                     </div>
@@ -532,15 +592,19 @@
                 return;
             }
 
-            const now = Date.now();
             const totalSewa = activeSession.totalSewa || 0;
-            
             let totalDurationMin = 0;
+            
+            // Hitung total durasi gabungan dari setiap log waktu
             const tempPlayers = activeSession.players.map(p => {
-                const end = p.isActive ? now : p.endTime;
-                const duration = calculateDurationMin(p.startTime, end);
-                totalDurationMin += duration;
-                return { ...p, calcDuration: duration, calcEnd: end };
+                const logs = p.timeLogs || [{start: p.startTime, end: p.endTime}];
+                let playerDur = 0;
+                logs.forEach(l => {
+                    playerDur += calculateDurationMin(l.start, l.end);
+                });
+                
+                totalDurationMin += playerDur;
+                return { ...p, calcDuration: playerDur };
             });
 
             let totalBillSum = 0;
@@ -549,7 +613,7 @@
                 if (totalDurationMin > 0) {
                     shareSewa = (p.calcDuration / totalDurationMin) * totalSewa;
                 }
-                const totalBayar = Math.round(shareSewa) + (p.extraCost || 0);
+                const totalBayar = Math.round(shareSewa); // Tanpa Extra Cost
                 totalBillSum += totalBayar;
 
                 return {
@@ -561,14 +625,14 @@
 
             let maxTrophy = -1;
             calculationResults.forEach(p => {
-                if (p.trophies > maxTrophy) maxTrophy = p.trophies;
+                if ((p.trophies||0) > maxTrophy) maxTrophy = p.trophies || 0;
             });
             
             const receiptListEl = document.getElementById('receipt-list');
             let receiptHtml = '';
             
             calculationResults.forEach(p => {
-                const isChamp = maxTrophy > 0 && p.trophies === maxTrophy;
+                const isChamp = maxTrophy > 0 && (p.trophies||0) === maxTrophy;
                 receiptHtml += `
                 <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 flex justify-between items-center">
                     <div>
@@ -576,13 +640,13 @@
                             ${p.name} 
                             ${isChamp ? '<i class="fa-solid fa-crown text-yellow-500 text-xs ml-1" title="Juara Sesi"></i>' : ''}
                         </div>
-                        <div class="text-[10px] text-slate-400 mt-0.5">
-                            ${formatDuration(p.calcDuration)} main | Rp ${formatRupiah(p.shareSewa).replace('Rp','')} (PS) + Rp ${formatRupiah(p.extraCost).replace('Rp','')} (Makan)
+                        <div class="text-xs text-slate-400 mt-0.5">
+                            ${formatDuration(p.calcDuration)} main
                         </div>
                     </div>
                     <div class="font-bold text-blue-400 text-right">
                         ${formatRupiah(p.totalBayar)}
-                        <div class="text-[10px] text-slate-500 font-normal mt-0.5">${p.trophies} Trofi</div>
+                        <div class="text-[10px] text-slate-500 font-normal mt-0.5">${p.trophies||0} Trofi</div>
                     </div>
                 </div>
                 `;
@@ -610,25 +674,25 @@
 
             try {
                 let maxTrophy = 0;
-                calculationResults.forEach(p => { if (p.trophies > maxTrophy) maxTrophy = p.trophies; });
+                calculationResults.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
 
                 const batch = writeBatch(db);
                 
                 for (const player of calculationResults) {
                     const statDocId = player.name.trim().toLowerCase();
                     const statRef = doc(db, statsColPath, statDocId);
-                    const isChampion = (maxTrophy > 0 && player.trophies === maxTrophy);
+                    const isChampion = (maxTrophy > 0 && (player.trophies||0) === maxTrophy);
                     const statSnap = await getDoc(statRef);
                     
                     if (statSnap.exists()) {
                         batch.update(statRef, {
-                            totalTrophies: increment(player.trophies),
+                            totalTrophies: increment(player.trophies||0),
                             championships: isChampion ? increment(1) : increment(0)
                         });
                     } else {
                         batch.set(statRef, {
                             name: player.name.trim(),
-                            totalTrophies: player.trophies,
+                            totalTrophies: player.trophies || 0,
                             championships: isChampion ? 1 : 0
                         });
                     }
