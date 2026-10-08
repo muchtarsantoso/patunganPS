@@ -11,8 +11,8 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* Slate 900 */
-            color: #f8fafc; /* Slate 50 */
+            background-color: #0f172a; 
+            color: #f8fafc; 
             position: relative;
         }
 
@@ -22,8 +22,8 @@
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: -1;
-            opacity: 0.08; /* Transparansi rendah agar teks tetap terbaca jelas */
-            pointer-events: none; /* Agar tidak menghalangi tombol saat diklik */
+            opacity: 0.08; 
+            pointer-events: none; 
             background-image: 
                 url('https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg'),
                 url('https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg'),
@@ -112,21 +112,10 @@
                     </div>
                 </div>
 
-                <!-- Tambah Pemain -->
-                <div class="bg-slate-800/90 rounded-2xl p-4 shadow-lg border border-slate-700">
-                    <h3 class="font-bold text-sm text-slate-400 mb-3 uppercase tracking-wider">Tambah Pemain</h3>
-                    <div class="flex gap-2">
-                        <datalist id="default-players">
-                            <option value="Jun"></option><option value="Muchtar"></option>
-                            <option value="Ekky"></option><option value="Ramdan"></option>
-                            <option value="Rendy"></option><option value="Widi"></option>
-                        </datalist>
-                        <input type="text" list="default-players" id="new-player-name" placeholder="Pilih / Ketik Nama..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-orange-500 transition-colors">
-                        <button onclick="openAddPlayerModal()" class="bg-orange-600 hover:bg-orange-500 text-white rounded-xl px-4 py-2 font-bold transition-colors">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
+                <!-- Tombol Tambah Pemain -->
+                <button onclick="openAddPlayerModal('current_active')" class="w-full bg-orange-600 hover:bg-orange-500 text-white rounded-xl px-4 py-3 font-bold transition-colors shadow-lg flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-users"></i> Tambah Pemain Baru
+                </button>
 
                 <!-- Player List Container -->
                 <div id="player-list-current_active" class="space-y-3"></div>
@@ -193,20 +182,31 @@
         </div>
     </main>
 
-    <!-- MODAL: Confirm Add Player Time -->
+    <!-- MODAL: Confirm Add Player (Bisa Banyak) -->
     <div id="modal-add-time" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex flex-col justify-center items-center p-4">
         <div class="bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-700 p-6">
-            <h2 class="text-xl font-bold text-center mb-1">Waktu Mulai</h2>
-            <p class="text-center text-slate-400 text-sm mb-6" id="add-player-display-name"></p>
+            <h2 class="text-xl font-bold text-center mb-4">Pilih Pemain</h2>
+            
+            <div class="mb-5">
+                <label class="text-[11px] text-slate-400 mb-2 uppercase font-bold tracking-wider block">Bisa Pilih Lebih Dari Satu</label>
+                <div id="default-players-grid" class="flex flex-wrap gap-2">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <label class="text-[11px] text-slate-400 mb-2 uppercase font-bold tracking-wider block">Atau Ketik Nama Baru</label>
+                <input type="text" id="new-player-extra" placeholder="Nama..." class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none">
+            </div>
             
             <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 mb-6 flex flex-col items-center">
-                <label class="text-xs text-slate-400 mb-2 uppercase font-bold tracking-wider">Atur Jam (Opsional)</label>
+                <label class="text-[11px] text-slate-400 mb-2 uppercase font-bold tracking-wider">Atur Jam Mulai (Semua Sama)</label>
                 <input type="time" id="add-player-time-input" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-xl text-white focus:border-orange-500 outline-none text-center w-full">
             </div>
 
             <div class="space-y-3">
                 <button onclick="confirmAddPlayer()" class="w-full py-3 rounded-xl font-bold gaming-gradient text-white shadow-lg shadow-orange-500/30">
-                    <i class="fa-solid fa-check mr-1"></i> Simpan
+                    <i class="fa-solid fa-check mr-1"></i> Mulai Main
                 </button>
                 <button onclick="closeAddPlayerModal()" class="w-full py-3 rounded-xl font-semibold bg-slate-700 hover:bg-slate-600 text-white transition-colors">
                     Batal
@@ -215,7 +215,7 @@
         </div>
     </div>
 
-    <!-- MODAL: Receipt / Struk -->
+    <!-- MODAL: Receipt / Struk (Hanya untuk Sesi Aktif) -->
     <div id="modal-result" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex flex-col justify-end sm:justify-center items-center">
         <div class="bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-700">
             <div class="p-6">
@@ -270,7 +270,11 @@
         let activeSession = null;
         let historySessions = [];
         let clockInterval = null;
-        let pendingPlayerName = "";
+        
+        // Data Tambah Pemain
+        const defaultPlayerNames = ["Jun", "Muchtar", "Ekky", "Ramdan", "Rendy", "Widi"];
+        let selectedNewPlayers = [];
+        let currentAddPlayerSessionId = null;
 
         // UI Tabs
         window.switchTab = (tab) => {
@@ -312,7 +316,6 @@
             return `${count} <span class="text-xs ml-1">${'🏆'.repeat(count)}</span>`;
         };
 
-        // Mengubah YYYY-MM-DD menjadi "Sesi Hari, Tanggal Bulan Tahun"
         const formatDateToTitle = (dateString) => {
             if (!dateString) return 'Sesi Baru';
             const d = new Date(dateString);
@@ -326,7 +329,7 @@
             setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3000);
         };
 
-        // Listen to all sessions from DB
+        // DB Listener
         onSnapshot(collection(db, 'ps_sessions'), (snapshot) => {
             document.getElementById('sesi-loading').classList.add('hidden');
             allSessions = [];
@@ -352,18 +355,14 @@
         // ---------------- Sesi Aktif Logic ----------------
         window.startNewSession = async () => {
             try {
-                // Buat tanggal standar hari ini YYYY-MM-DD
                 const now = new Date();
-                const yyyy = now.getFullYear();
-                const mm = String(now.getMonth() + 1).padStart(2, '0');
-                const dd = String(now.getDate()).padStart(2, '0');
-                const sessionDate = `${yyyy}-${mm}-${dd}`;
+                const sessionDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                 const dateTitle = formatDateToTitle(sessionDate);
 
                 await setDoc(doc(db, 'ps_sessions', 'current_active'), {
                     isActive: true, 
                     title: dateTitle, 
-                    sessionDate: sessionDate, // Simpan format raw untuk date picker
+                    sessionDate: sessionDate, 
                     totalSewa: 0, 
                     players: []
                 });
@@ -371,14 +370,20 @@
             } catch (error) { showToast("Gagal memulai sesi", "error"); }
         };
 
-        window.openAddPlayerModal = () => {
-            const name = document.getElementById('new-player-name').value.trim();
-            if (!name) return showToast("Nama pemain tidak boleh kosong", "error");
-            if (activeSession && activeSession.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-                return showToast("Pemain sudah ada. Klik 'Mulai Lagi' di kartunya.", "error");
-            }
-            pendingPlayerName = name;
-            document.getElementById('add-player-display-name').innerText = name;
+        // ---------------- Logika Tambah Pemain (Ceklis Bersamaan) ----------------
+        window.openAddPlayerModal = (sessionId = 'current_active') => {
+            currentAddPlayerSessionId = sessionId;
+            selectedNewPlayers = [];
+            
+            // Render tombol ceklis
+            const grid = document.getElementById('default-players-grid');
+            grid.innerHTML = defaultPlayerNames.map(name => `
+                <button onclick="togglePlayerChip(this, '${name}')" class="border border-slate-600 text-slate-300 px-3 py-1.5 rounded-full text-sm font-semibold transition-all">
+                    ${name}
+                </button>
+            `).join('');
+            
+            document.getElementById('new-player-extra').value = '';
             
             const now = new Date();
             document.getElementById('add-player-time-input').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -386,10 +391,40 @@
             document.getElementById('modal-add-time').classList.remove('hidden');
         };
 
+        window.togglePlayerChip = (btn, name) => {
+            const index = selectedNewPlayers.indexOf(name);
+            if(index === -1) {
+                selectedNewPlayers.push(name);
+                btn.classList.add('bg-orange-600', 'text-white', 'border-orange-500');
+                btn.classList.remove('text-slate-300', 'border-slate-600');
+            } else {
+                selectedNewPlayers.splice(index, 1);
+                btn.classList.remove('bg-orange-600', 'text-white', 'border-orange-500');
+                btn.classList.add('text-slate-300', 'border-slate-600');
+            }
+        };
+
         window.closeAddPlayerModal = () => { document.getElementById('modal-add-time').classList.add('hidden'); };
 
         window.confirmAddPlayer = async () => {
-            if (!activeSession) return;
+            const extraName = document.getElementById('new-player-extra').value.trim();
+            let namesToAdd = [...selectedNewPlayers];
+            if (extraName) namesToAdd.push(extraName);
+
+            if (namesToAdd.length === 0) return showToast("Pilih minimal 1 pemain", "error");
+
+            const session = currentAddPlayerSessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === currentAddPlayerSessionId);
+            if (!session) return;
+
+            // Filter yg belum ada
+            let existingNames = session.players.map(p => p.name.toLowerCase());
+            let finalNames = namesToAdd.filter(n => !existingNames.includes(n.toLowerCase()));
+
+            if (finalNames.length === 0) {
+                closeAddPlayerModal();
+                return showToast("Semua pemain yg dipilih sudah ada di sesi ini.", "error");
+            }
+
             const timeStr = document.getElementById('add-player-time-input').value;
             let startTime = Date.now();
             
@@ -400,37 +435,52 @@
                 startTime = dateObj.getTime();
             }
 
-            const newPlayer = {
-                id: 'p_' + Date.now(),
-                name: pendingPlayerName,
+            const newPlayersData = finalNames.map(name => ({
+                id: 'p_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                name: name,
                 timeLogs: [{ start: startTime, end: null }],
                 trophies: 0,
-                isActive: true
-            };
+                isActive: true,
+                isPaid: false // Default selalu Belum Lunas
+            }));
 
             try {
-                await updateDoc(doc(db, 'ps_sessions', 'current_active'), { 
-                    players: [...activeSession.players, newPlayer] 
+                await updateDoc(doc(db, 'ps_sessions', currentAddPlayerSessionId), { 
+                    players: [...session.players, ...newPlayersData] 
                 });
-                document.getElementById('new-player-name').value = '';
                 closeAddPlayerModal();
-                showToast(`${pendingPlayerName} ditambahkan!`, "success");
+                showToast(`${finalNames.length} pemain ditambahkan!`, "success");
             } catch (error) { showToast("Gagal menambah", "error"); }
         };
 
-        // ---------------- Generic CRUD for any session ----------------
-        
-        // FUNGSI UPDATE TANGGAL SESI DARI DATE PICKER
+        // ---------------- Generic CRUD / Actions ----------------
+        window.removePlayer = async (sessionId, playerId) => {
+            if(confirm("Yakin ingin menghapus pemain ini dari sesi?")) {
+                const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+                if (!session) return;
+                const updatedPlayers = session.players.filter(p => p.id !== playerId);
+                await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
+                showToast("Pemain dihapus", "success");
+            }
+        };
+
+        window.deleteSession = async (sessionId) => {
+            if(confirm("PERINGATAN: Yakin ingin MENGHAPUS SELURUH SESI INI dari riwayat?")) {
+                await deleteDoc(doc(db, 'ps_sessions', sessionId));
+                showToast("Sesi berhasil dihapus", "success");
+            }
+        };
+
         window.updateSessionDate = async (sessionId, newDateStr) => {
              if (!newDateStr) return;
              try {
-                 const title = formatDateToTitle(newDateStr); // Otomatis format: Sesi Kamis, 8 Okt...
+                 const title = formatDateToTitle(newDateStr); 
                  await updateDoc(doc(db, 'ps_sessions', sessionId), { 
                      sessionDate: newDateStr, 
                      title: title 
                  });
-                 showToast("Tanggal sesi berhasil diperbarui", "success");
-             } catch (error) { showToast("Gagal mengubah tanggal sesi", "error"); }
+                 showToast("Tanggal sesi diperbarui", "success");
+             } catch (error) { showToast("Gagal mengubah tanggal", "error"); }
         };
 
         window.togglePlayStatus = async (sessionId, playerId, action) => {
@@ -495,7 +545,17 @@
                 return { ...p, timeLogs: logs, isActive: false };
             });
             await updateDoc(doc(db, 'ps_sessions', 'current_active'), { players: updatedPlayers });
-            showToast("Semua waktu pemain telah dihentikan", "success");
+            showToast("Semua waktu pemain dihentikan", "success");
+        };
+
+        window.togglePaymentStatus = async (sessionId, playerId) => {
+            const session = historySessions.find(s => s.id === sessionId);
+            if (!session) return;
+            const updatedPlayers = session.players.map(p => {
+                if (p.id === playerId) return { ...p, isPaid: !p.isPaid };
+                return p;
+            });
+            await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
         };
 
         // ---------------- UI Renderers ----------------
@@ -509,7 +569,6 @@
             document.getElementById('sesi-start-container').classList.add('hidden');
             document.getElementById('sesi-active-container').classList.remove('hidden');
             
-            // Set value input tanggal sesi
             document.getElementById('active-session-date').value = activeSession.sessionDate || '';
             document.getElementById('active-session-title-text').innerText = activeSession.title || 'Sesi Hari Ini';
             
@@ -549,11 +608,14 @@
                             <h4 class="font-bold text-lg">${p.name}</h4>
                             ${isPlaying ? '<span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' : ''}
                         </div>
-                        ${isPlaying ? `
-                            <button onclick="togglePlayStatus('${session.id}', '${p.id}', 'stop')" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"><i class="fa-solid fa-stop"></i> Selesai</button>
-                        ` : `
-                            <button onclick="togglePlayStatus('${session.id}', '${p.id}', 'start')" class="bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"><i class="fa-solid fa-play"></i> Mulai Lagi</button>
-                        `}
+                        <div class="flex items-center gap-1">
+                            ${isPlaying ? `
+                                <button onclick="togglePlayStatus('${session.id}', '${p.id}', 'stop')" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"><i class="fa-solid fa-stop"></i> Selesai</button>
+                            ` : `
+                                <button onclick="togglePlayStatus('${session.id}', '${p.id}', 'start')" class="bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"><i class="fa-solid fa-play"></i> Mulai Lagi</button>
+                            `}
+                            <button onclick="removePlayer('${session.id}', '${p.id}')" class="text-slate-500 hover:text-red-500 p-2 transition-colors ml-1" title="Hapus Pemain"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </div>
                     <div class="mb-4">
                         ${logsHtml}
@@ -574,9 +636,16 @@
             return html;
         }
 
-        window.toggleHistoryDetails = (id) => {
-            const el = document.getElementById(`hist-details-${id}`);
-            el.classList.toggle('hidden');
+        // Toggles History views
+        window.toggleHistoryDetails = (id) => { document.getElementById(`hist-details-${id}`).classList.toggle('hidden'); };
+        window.toggleEditMode = (id, isEdit) => {
+            if(isEdit) {
+                document.getElementById(`hist-struk-${id}`).classList.add('hidden');
+                document.getElementById(`hist-edit-${id}`).classList.remove('hidden');
+            } else {
+                document.getElementById(`hist-edit-${id}`).classList.add('hidden');
+                document.getElementById(`hist-struk-${id}`).classList.remove('hidden');
+            }
         };
 
         function renderHistoryTab() {
@@ -586,44 +655,129 @@
                 return;
             }
             let html = '';
+            
             historySessions.forEach(session => {
+                // 1. Hitung Juara
+                let maxTrophy = 0;
+                session.players.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
+                let champs = [];
+                if (maxTrophy > 0) champs = session.players.filter(p => (p.trophies||0) === maxTrophy).map(p => p.name);
+                let champHtml = champs.length > 0 ? `<p class="text-xs text-yellow-500 mt-1 font-bold"><i class="fa-solid fa-crown"></i> Juara: ${champs.join(', ')}</p>` : '';
+
+                // 2. Kalkulasi Data Struk
+                const totalSewa = session.totalSewa || 0;
+                let totalIndividualMins = 0; 
+                let overallMins = 0;
+                let globalMin = Infinity, globalMax = 0;
+
+                const tempPlayers = session.players.map(p => {
+                    let pDuration = 0;
+                    (p.timeLogs||[]).forEach(l => {
+                        if (l.start < globalMin) globalMin = l.start;
+                        let end = l.end || Date.now();
+                        if (end > globalMax) globalMax = end;
+                        pDuration += calculateDurationMin(l.start, l.end);
+                    });
+                    totalIndividualMins += pDuration;
+                    return { ...p, calcDuration: pDuration };
+                });
+                if(globalMax > globalMin) overallMins = Math.floor((globalMax - globalMin) / 60000);
+
+                let strukHtml = '';
+                let totalBillSum = 0;
+                
+                tempPlayers.forEach(p => {
+                    let shareSewa = totalIndividualMins > 0 ? (p.calcDuration / totalIndividualMins) * totalSewa : 0;
+                    let totalBayar = Math.round(shareSewa);
+                    totalBillSum += totalBayar;
+                    
+                    const isPaid = p.isPaid ? true : false;
+                    const statusBadge = isPaid 
+                        ? `<button onclick="togglePaymentStatus('${session.id}', '${p.id}')" class="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-bold mt-1 border border-green-500/50 hover:bg-green-500/40 transition">LUNAS</button>`
+                        : `<button onclick="togglePaymentStatus('${session.id}', '${p.id}')" class="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold mt-1 border border-red-500/50 hover:bg-red-500/40 transition">BELUM LUNAS</button>`;
+                    
+                    strukHtml += `
+                    <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 mb-2">
+                        <div>
+                            <div class="font-bold text-sm text-slate-200">${p.name} ${champs.includes(p.name) ? '<i class="fa-solid fa-crown text-yellow-500 text-xs ml-1"></i>' : ''}</div>
+                            <div class="text-xs text-slate-400 mt-0.5">${formatDuration(p.calcDuration)} main</div>
+                            ${statusBadge}
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-blue-400 text-sm">${formatRupiah(totalBayar)}</div>
+                            <div class="text-[10px] text-slate-500 mt-0.5">${generateTrophies(p.trophies)}</div>
+                        </div>
+                    </div>`;
+                });
+
+                // 3. Render HTML List Riwayat
                 html += `
                 <div class="bg-slate-800/90 rounded-2xl border border-slate-700 overflow-hidden shadow-lg backdrop-blur-sm">
-                    <div class="p-4 bg-slate-900/50 flex justify-between items-center cursor-pointer hover:bg-slate-800 transition" onclick="toggleHistoryDetails('${session.id}')">
-                        <div>
-                            <h3 class="font-bold text-orange-400">${session.title}</h3>
-                            <p class="text-xs text-slate-400 mt-1">${session.players.length} Pemain | Total Rp ${formatRupiah(session.totalSewa).replace('Rp','')}</p>
-                        </div>
-                        <i class="fa-solid fa-chevron-down text-slate-500"></i>
-                    </div>
-                    <div id="hist-details-${session.id}" class="hidden p-4 border-t border-slate-700 bg-slate-800/90">
-                        
-                        <!-- PENGATURAN TANGGAL & BIAYA RIWAYAT -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-slate-900/60 p-3 rounded-xl border border-slate-700">
+                    <div class="p-4 bg-slate-900/50 cursor-pointer hover:bg-slate-800 transition" onclick="toggleHistoryDetails('${session.id}')">
+                        <div class="flex justify-between items-start">
                             <div>
-                                <label class="block text-xs text-slate-400 mb-1">Ubah Tanggal Sesi</label>
-                                <div class="relative bg-slate-800 border border-slate-700 rounded-xl overflow-hidden focus-within:border-orange-500 p-2 text-center h-10 flex items-center justify-center">
-                                    <input type="date" value="${session.sessionDate || ''}" onchange="updateSessionDate('${session.id}', this.value)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                    <div class="font-bold text-slate-200 text-sm flex items-center justify-center gap-2 pointer-events-none">
-                                        <span>${session.title || 'Pilih Tanggal'}</span> <i class="fa-solid fa-calendar-days text-slate-500"></i>
-                                    </div>
+                                <h3 class="font-bold text-orange-400">${session.title}</h3>
+                                <p class="text-xs text-slate-400 mt-1">${session.players.length} Pemain | Tagihan Rp ${formatRupiah(totalBillSum).replace('Rp','')}</p>
+                                ${champHtml}
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-slate-500 mt-1"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="hist-details-${session.id}" class="hidden">
+                        
+                        <!-- STRUK VIEW -->
+                        <div id="hist-struk-${session.id}" class="p-4 border-t border-slate-700 bg-slate-800/90">
+                            <div class="mb-4">
+                                <h4 class="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider text-center">Struk Sesi & Pembayaran</h4>
+                                <div class="max-h-64 overflow-y-auto hide-scrollbar">
+                                    ${strukHtml}
+                                </div>
+                                <div class="flex justify-between items-center text-xs mt-3 pt-3 border-t border-slate-700">
+                                    <span class="text-slate-400">Total Waktu: ${formatDuration(overallMins)}</span>
+                                    <span class="font-bold text-orange-400">Total: ${formatRupiah(totalBillSum)}</span>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-xs text-slate-400 mb-1">Edit Total Biaya (Rp)</label>
-                                <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl overflow-hidden focus-within:border-orange-500 h-10">
-                                    <div class="pl-3 text-slate-500 text-sm">Rp</div>
-                                    <input type="number" value="${session.totalSewa || 0}" onchange="updateTotalSewa('${session.id}', this.value)" class="w-full bg-transparent px-3 py-2 text-white outline-none text-sm font-bold">
-                                </div>
+                            <div class="flex gap-2">
+                                <button onclick="toggleEditMode('${session.id}', true)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
+                                <button onclick="deleteSession('${session.id}')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
 
-                        <div class="space-y-2 mb-4">
-                            ${generatePlayerListHTML(session, false)}
+                        <!-- EDIT VIEW (Mirip Sesi Aktif) -->
+                        <div id="hist-edit-${session.id}" class="hidden p-4 border-t border-slate-700 bg-slate-800/90">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-bold text-slate-300 text-sm"><i class="fa-solid fa-pen-to-square text-orange-400 mr-1"></i> Mode Edit</h4>
+                                <button onclick="toggleEditMode('${session.id}', false)" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition">Selesai Edit</button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1 uppercase font-bold tracking-wider">Ubah Tanggal</label>
+                                    <div class="relative bg-slate-800 border border-slate-700 rounded-xl overflow-hidden focus-within:border-orange-500 p-2 text-center h-10 flex items-center justify-center">
+                                        <input type="date" value="${session.sessionDate || ''}" onchange="updateSessionDate('${session.id}', this.value)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                        <div class="font-bold text-slate-200 text-sm flex items-center justify-center gap-2 pointer-events-none">
+                                            <span>${session.title || 'Pilih Tanggal'}</span> <i class="fa-solid fa-calendar-days text-slate-500"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 mb-1 uppercase font-bold tracking-wider">Edit Total Sewa (Rp)</label>
+                                    <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl overflow-hidden focus-within:border-orange-500 h-10">
+                                        <div class="pl-3 text-slate-500 text-sm font-bold">Rp</div>
+                                        <input type="number" value="${session.totalSewa || 0}" onchange="updateTotalSewa('${session.id}', this.value)" class="w-full bg-transparent px-2 py-2 text-white outline-none text-sm font-bold">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button onclick="openAddPlayerModal('${session.id}')" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 font-bold py-2.5 rounded-xl transition-colors text-sm mb-3 shadow-md">
+                                <i class="fa-solid fa-user-plus mr-1"></i> Tambah Pemain Susulan
+                            </button>
+
+                            <div class="space-y-3 mb-2">
+                                ${generatePlayerListHTML(session, false)}
+                            </div>
                         </div>
-                        <button onclick="showReviewModal('${session.id}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-md">
-                            <i class="fa-solid fa-receipt"></i> Lihat Struk Sesi Ini
-                        </button>
                     </div>
                 </div>`;
             });
@@ -667,7 +821,7 @@
             listEl.innerHTML = html;
         }
 
-        // ---------------- Bill / Receipt Modal ----------------
+        // ---------------- Modal Review & Simpan Sesi Aktif ----------------
         window.closeModal = () => { document.getElementById('modal-result').classList.add('hidden'); };
 
         window.showReviewModal = (sessionId) => { calculateAndShowModal(sessionId, false); };
@@ -679,9 +833,7 @@
 
             const totalSewa = session.totalSewa || 0;
             
-            let globalMin = Infinity;
-            let globalMax = 0;
-            let totalIndividualMins = 0; 
+            let globalMin = Infinity, globalMax = 0, totalIndividualMins = 0; 
             
             const tempPlayers = session.players.map(p => {
                 let pDuration = 0;
