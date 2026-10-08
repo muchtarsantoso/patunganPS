@@ -184,37 +184,30 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs, updateDoc, increment, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, updateDoc, increment, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global environment variables check
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ps-arena-app';
-        let firebaseConfig = null;
-        try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        } catch(e) { console.error("Invalid firebase config"); }
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCCNcZD9LkFhDjgli7AxlcyXPdIgU55j50",
-  authDomain: "patungan-ps.firebaseapp.com",
-  projectId: "patungan-ps",
-  storageBucket: "patungan-ps.firebasestorage.app",
-  messagingSenderId: "366357148263",
-  appId: "1:366357148263:web:fdc6432040c19eaaa69ac2",
-  measurementId: "G-SHPFT2P894"
-};
+        // 1. Konfigurasi Firebase Anda yang BENAR
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCNcZD9LkFhDjgli7AxlcyXPdIgU55j50",
+            authDomain: "patungan-ps.firebaseapp.com",
+            projectId: "patungan-ps",
+            storageBucket: "patungan-ps.firebasestorage.app",
+            messagingSenderId: "366357148263",
+            appId: "1:366357148263:web:fdc6432040c19eaaa69ac2",
+            measurementId: "G-SHPFT2P894"
+        };
+        
+        // 2. Inisialisasi Aplikasi & Database
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const auth = getAuth(app);
         
-        let currentUser = null;
         let activeSession = null;
         let sessionUnsubscribe = null;
         let statsUnsubscribe = null;
         let clockInterval = null;
 
-        const sessionDocPath = `artifacts/${appId}/public/data/sessions`;
-        const statsColPath = `artifacts/${appId}/public/data/stats`;
+        const sessionDocPath = `sesi_main/current`;
+        const statsColPath = `klasemen_pemain`;
 
         // UI Elements
         const viewSesi = document.getElementById('view-sesi');
@@ -279,35 +272,14 @@ const firebaseConfig = {
                 tabKlasemenBtn.classList.remove('text-slate-400', 'border-transparent');
                 tabSesiBtn.classList.remove('text-blue-400', 'border-blue-500');
                 tabSesiBtn.classList.add('text-slate-400', 'border-transparent');
-                renderKlasemen(); // Re-render logic to sort etc
+                renderKlasemen(); 
             }
         };
-
-        async function initAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Auth error:", error);
-                loadingSesi.innerHTML = `<div class="text-red-400"><i class="fa-solid fa-triangle-exclamation mb-2 text-3xl"></i><br>Gagal terhubung ke server.</div>`;
-            }
-        }
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                listenToActiveSession();
-                listenToStats();
-            }
-        });
 
         function listenToActiveSession() {
             if (sessionUnsubscribe) sessionUnsubscribe();
             
-            const docRef = doc(db, sessionDocPath, 'current');
+            const docRef = doc(db, sessionDocPath);
             sessionUnsubscribe = onSnapshot(docRef, (docSnap) => {
                 loadingSesi.classList.add('hidden');
                 
@@ -338,7 +310,6 @@ const firebaseConfig = {
             if (statsUnsubscribe) statsUnsubscribe();
             
             const colRef = collection(db, statsColPath);
-            // Rule 2: No complex queries, fetch all and sort in JS
             statsUnsubscribe = onSnapshot(colRef, (snapshot) => {
                 statsData = [];
                 snapshot.forEach((doc) => {
@@ -351,7 +322,6 @@ const firebaseConfig = {
         }
 
         window.startNewSession = async () => {
-            if (!currentUser) return;
             try {
                 const newSession = {
                     isActive: true,
@@ -359,7 +329,7 @@ const firebaseConfig = {
                     totalSewa: 0,
                     players: []
                 };
-                await setDoc(doc(db, sessionDocPath, 'current'), newSession);
+                await setDoc(doc(db, sessionDocPath), newSession);
                 showToast("Sesi baru dimulai!", "success");
             } catch (error) {
                 console.error(error);
@@ -368,7 +338,7 @@ const firebaseConfig = {
         };
 
         window.addPlayer = async () => {
-            if (!currentUser || !activeSession) return;
+            if (!activeSession) return;
             const nameInput = document.getElementById('new-player-name');
             const name = nameInput.value.trim();
             
@@ -377,7 +347,6 @@ const firebaseConfig = {
                 return;
             }
 
-            // Check duplicate (case insensitive)
             if (activeSession.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
                 showToast("Pemain sudah ada di sesi ini", "error");
                 return;
@@ -396,7 +365,7 @@ const firebaseConfig = {
             const updatedPlayers = [...activeSession.players, newPlayer];
             
             try {
-                await updateDoc(doc(db, sessionDocPath, 'current'), {
+                await updateDoc(doc(db, sessionDocPath), {
                     players: updatedPlayers
                 });
                 nameInput.value = '';
@@ -408,8 +377,7 @@ const firebaseConfig = {
         };
 
         window.stopPlayer = async (playerId) => {
-             if (!currentUser || !activeSession) return;
-             
+             if (!activeSession) return;
              const updatedPlayers = activeSession.players.map(p => {
                  if (p.id === playerId && p.isActive) {
                      return { ...p, endTime: Date.now(), isActive: false };
@@ -418,31 +386,30 @@ const firebaseConfig = {
              });
 
              try {
-                await updateDoc(doc(db, sessionDocPath, 'current'), { players: updatedPlayers });
+                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
              } catch (error) {
                  showToast("Gagal menghentikan pemain", "error");
              }
         };
 
         window.updateTrophy = async (playerId, delta) => {
-            if (!currentUser || !activeSession) return;
+            if (!activeSession) return;
             const updatedPlayers = activeSession.players.map(p => {
                  if (p.id === playerId) {
-                     const newTotal = Math.max(0, p.trophies + delta); // Prevent negative
+                     const newTotal = Math.max(0, p.trophies + delta);
                      return { ...p, trophies: newTotal };
                  }
                  return p;
              });
-             // Optimistic UI update could go here, but relying on snapshot is safer
              try {
-                await updateDoc(doc(db, sessionDocPath, 'current'), { players: updatedPlayers });
+                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
              } catch (e) {
                 showToast("Gagal update trofi", "error");
              }
         };
 
         window.updateExtraCost = async (playerId, value) => {
-            if (!currentUser || !activeSession) return;
+            if (!activeSession) return;
             const cost = parseInt(value) || 0;
             const updatedPlayers = activeSession.players.map(p => {
                  if (p.id === playerId) {
@@ -451,17 +418,17 @@ const firebaseConfig = {
                  return p;
              });
              try {
-                await updateDoc(doc(db, sessionDocPath, 'current'), { players: updatedPlayers });
+                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
              } catch (e) {
                  console.error(e);
              }
         };
 
         window.updateTotalSewa = async (value) => {
-             if (!currentUser || !activeSession) return;
+             if (!activeSession) return;
              const total = parseInt(value) || 0;
              try {
-                await updateDoc(doc(db, sessionDocPath, 'current'), { totalSewa: total });
+                await updateDoc(doc(db, sessionDocPath), { totalSewa: total });
              } catch (e) {}
         };
 
@@ -504,13 +471,11 @@ const firebaseConfig = {
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4 mt-4">
-                        <!-- Extra Cost Input -->
                         <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
                             <label class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Makan/Minum (Rp)</label>
                             <input type="number" value="${p.extraCost || ''}" placeholder="0" onblur="updateExtraCost('${p.id}', this.value)" class="w-full bg-transparent text-sm font-semibold focus:outline-none text-white">
                         </div>
                         
-                        <!-- Trophies Counter -->
                         <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
                             <label class="text-[10px] text-slate-500 uppercase font-bold block mb-1 text-center">Trofi Match</label>
                             <div class="flex items-center justify-between px-2">
@@ -532,7 +497,6 @@ const firebaseConfig = {
                 return;
             }
 
-            // Sort logic: Championships (desc) -> Total Trophies (desc)
             const sorted = [...statsData].sort((a, b) => {
                 if ((b.championships || 0) !== (a.championships || 0)) {
                     return (b.championships || 0) - (a.championships || 0);
@@ -542,7 +506,6 @@ const firebaseConfig = {
 
             let html = '';
             sorted.forEach((p, index) => {
-                // Formatting for top 3
                 let rankStyle = 'text-slate-400';
                 let rowBg = '';
                 if (index === 0) { rankStyle = 'text-yellow-400 font-bold'; rowBg = 'bg-yellow-500/5'; }
@@ -572,7 +535,6 @@ const firebaseConfig = {
             const now = Date.now();
             const totalSewa = activeSession.totalSewa || 0;
             
-            // 1. Calculate total duration for ratio
             let totalDurationMin = 0;
             const tempPlayers = activeSession.players.map(p => {
                 const end = p.isActive ? now : p.endTime;
@@ -581,10 +543,8 @@ const firebaseConfig = {
                 return { ...p, calcDuration: duration, calcEnd: end };
             });
 
-            // 2. Calculate splits
             let totalBillSum = 0;
             calculationResults = tempPlayers.map(p => {
-                // Avoid division by zero
                 let shareSewa = 0;
                 if (totalDurationMin > 0) {
                     shareSewa = (p.calcDuration / totalDurationMin) * totalSewa;
@@ -599,13 +559,11 @@ const firebaseConfig = {
                 };
             });
 
-            // Determine Champion(s)
             let maxTrophy = -1;
             calculationResults.forEach(p => {
                 if (p.trophies > maxTrophy) maxTrophy = p.trophies;
             });
             
-            // Render Modal
             const receiptListEl = document.getElementById('receipt-list');
             let receiptHtml = '';
             
@@ -632,11 +590,7 @@ const firebaseConfig = {
 
             receiptListEl.innerHTML = receiptHtml;
             document.getElementById('receipt-total-time').innerText = formatDuration(totalDurationMin);
-            // Handling small rounding differences
-            const diff = Math.abs(totalBillSum - (totalSewa + tempPlayers.reduce((a,b)=>a+(b.extraCost||0),0)));
-            let displayCollected = formatRupiah(totalBillSum);
-            
-            document.getElementById('receipt-total-collected').innerText = displayCollected;
+            document.getElementById('receipt-total-collected').innerText = formatRupiah(totalBillSum);
             
             const dateStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             document.getElementById('modal-date-info').innerText = dateStr;
@@ -649,30 +603,21 @@ const firebaseConfig = {
         };
 
         window.confirmEndSession = async () => {
-            if (!currentUser) return;
-            
-            // Visual feedback
             const btn = event.currentTarget;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menyimpan...';
             btn.disabled = true;
 
             try {
-                // Find champion(s)
                 let maxTrophy = 0;
                 calculationResults.forEach(p => { if (p.trophies > maxTrophy) maxTrophy = p.trophies; });
 
-                // 1. Update Global Stats using Batch
                 const batch = writeBatch(db);
                 
                 for (const player of calculationResults) {
-                    // Use lowercase name as ID for simplicity and deduplication in stats
                     const statDocId = player.name.trim().toLowerCase();
                     const statRef = doc(db, statsColPath, statDocId);
-                    
                     const isChampion = (maxTrophy > 0 && player.trophies === maxTrophy);
-
-                    // Try to get existing stat to see if we need to set or update
                     const statSnap = await getDoc(statRef);
                     
                     if (statSnap.exists()) {
@@ -682,22 +627,20 @@ const firebaseConfig = {
                         });
                     } else {
                         batch.set(statRef, {
-                            name: player.name.trim(), // Keep original casing for display
+                            name: player.name.trim(),
                             totalTrophies: player.trophies,
                             championships: isChampion ? 1 : 0
                         });
                     }
                 }
 
-                // 2. Mark session as inactive (end it)
-                const sessionRef = doc(db, sessionDocPath, 'current');
+                const sessionRef = doc(db, sessionDocPath);
                 batch.update(sessionRef, {
                     isActive: false,
                     endedAt: Date.now(),
-                    finalData: calculationResults // Optional: save history
+                    finalData: calculationResults 
                 });
 
-                // Commit batch
                 await batch.commit();
 
                 showToast("Sesi berhasil diselesaikan!", "success");
@@ -711,8 +654,9 @@ const firebaseConfig = {
             }
         };
 
-        // Initialize App
-        initAuth();
+        // Jalankan koneksi!
+        listenToActiveSession();
+        listenToStats();
 
     </script>
 </body>
