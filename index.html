@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PS Arena - Split Bill & Klasemen</title>
+    <title>DKriuk PS Championship</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -14,35 +14,19 @@
             color: #f8fafc; /* Slate 50 */
         }
         .gaming-gradient {
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); /* Orange/Red for DKriuk */
         }
         .gaming-text {
-            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            background: linear-gradient(135deg, #f87171 0%, #fb923c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        /* Custom Input Number Hide Arrows */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-        /* Custom Time Input Indicator */
-        input[type="time"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            opacity: 0.5;
-            cursor: pointer;
-        }
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+        input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.5; cursor: pointer; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col pb-20">
@@ -50,91 +34,105 @@
     <header class="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
         <div class="max-w-md mx-auto px-4 py-4 flex justify-center items-center">
             <h1 class="text-2xl font-bold gaming-text flex items-center gap-2">
-                <i class="fa-solid fa-gamepad"></i> PS Arena Stats
+                <i class="fa-solid fa-gamepad"></i> DKriuk PS Championship
             </h1>
         </div>
         <!-- Tabs -->
-        <div class="flex max-w-md mx-auto border-b border-slate-800">
-            <button id="tab-sesi" class="flex-1 py-3 text-center font-semibold text-blue-400 border-b-2 border-blue-500 transition-colors" onclick="switchTab('sesi')">
-                <i class="fa-solid fa-stopwatch mr-1"></i> Sesi Aktif
+        <div class="flex max-w-md mx-auto border-b border-slate-800 text-sm sm:text-base">
+            <button id="tab-sesi" class="flex-1 py-3 text-center font-semibold text-orange-400 border-b-2 border-orange-500 transition-colors" onclick="switchTab('sesi')">
+                <i class="fa-solid fa-stopwatch block sm:inline mb-1 sm:mb-0"></i> Sesi Aktif
             </button>
-            <button id="tab-klasemen" class="flex-1 py-3 text-center font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors" onclick="switchTab('klasemen')">
-                <i class="fa-solid fa-trophy mr-1"></i> Klasemen
+            <button id="tab-riwayat" class="flex-1 py-3 text-center font-semibold text-slate-400 border-b-2 border-transparent transition-colors" onclick="switchTab('riwayat')">
+                <i class="fa-solid fa-clock-rotate-left block sm:inline mb-1 sm:mb-0"></i> Riwayat
+            </button>
+            <button id="tab-klasemen" class="flex-1 py-3 text-center font-semibold text-slate-400 border-b-2 border-transparent transition-colors" onclick="switchTab('klasemen')">
+                <i class="fa-solid fa-trophy block sm:inline mb-1 sm:mb-0"></i> Klasemen
             </button>
         </div>
     </header>
 
     <main class="flex-1 max-w-md w-full mx-auto p-4">
         
-        <!-- View: Sesi Aktif -->
+        <!-- ================= VIEW: SESI AKTIF ================= -->
         <div id="view-sesi" class="space-y-6 block">
-            
-            <!-- Loading State -->
             <div id="sesi-loading" class="text-center py-10 text-slate-400">
-                <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i>
-                <p>Memuat sesi...</p>
+                <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><p>Memuat sesi...</p>
             </div>
 
-            <!-- Start Session Button (Hidden if active) -->
+            <!-- Start Session -->
             <div id="sesi-start-container" class="hidden text-center py-10">
-                <div class="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
+                <div class="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20">
                     <i class="fa-solid fa-power-off text-4xl text-slate-400"></i>
                 </div>
                 <h2 class="text-xl font-bold mb-2">Belum Ada Sesi Main</h2>
-                <p class="text-slate-400 mb-6 text-sm">Mulai sesi baru untuk mulai mencatat waktu main dan tagihan teman-temanmu.</p>
-                <button onclick="startNewSession()" class="gaming-gradient hover:opacity-90 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">
+                <button onclick="startNewSession()" class="gaming-gradient hover:opacity-90 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 mt-4">
                     <i class="fa-solid fa-play mr-2"></i> Mulai Sesi Baru
                 </button>
             </div>
 
-            <!-- Active Session Area (Hidden if none) -->
+            <!-- Active Session Area -->
             <div id="sesi-active-container" class="hidden space-y-4">
-                
+                <div class="text-center">
+                    <h2 class="font-bold text-lg text-orange-400" id="active-session-title">Sesi Aktif Hari Ini</h2>
+                </div>
+
+                <!-- Tambah Pemain -->
                 <div class="bg-slate-800 rounded-2xl p-4 shadow-lg border border-slate-700">
                     <h3 class="font-bold text-sm text-slate-400 mb-3 uppercase tracking-wider">Tambah Pemain</h3>
                     <div class="flex gap-2">
-                        <!-- Data List (Dropdown otomatis) -->
                         <datalist id="default-players">
-                            <option value="Jun"></option>
-                            <option value="Muchtar"></option>
-                            <option value="Ekky"></option>
-                            <option value="Ramdan"></option>
-                            <option value="Rendy"></option>
-                            <option value="Widi"></option>
+                            <option value="Jun"></option><option value="Muchtar"></option>
+                            <option value="Ekky"></option><option value="Ramdan"></option>
+                            <option value="Rendy"></option><option value="Widi"></option>
                         </datalist>
-                        <input type="text" list="default-players" id="new-player-name" placeholder="Pilih / Ketik Nama..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors">
-                        <button onclick="addPlayer()" class="bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-4 py-2 font-bold transition-colors">
+                        <input type="text" list="default-players" id="new-player-name" placeholder="Pilih / Ketik Nama..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-orange-500 transition-colors">
+                        <button onclick="openAddPlayerModal()" class="bg-orange-600 hover:bg-orange-500 text-white rounded-xl px-4 py-2 font-bold transition-colors">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Player List -->
-                <div id="player-list" class="space-y-3">
-                    <!-- Populated by JS -->
+                <!-- Player List Container -->
+                <div id="player-list-current_active" class="space-y-3"></div>
+
+                <!-- Control Buttons -->
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button onclick="showReviewModal('current_active')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-2 rounded-xl text-sm transition-colors shadow-lg">
+                        <i class="fa-solid fa-eye"></i> Review Sementara
+                    </button>
+                    <button onclick="stopAllTimers()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-2 rounded-xl text-sm transition-colors shadow-lg">
+                        <i class="fa-solid fa-stop"></i> Selesaikan Sesi
+                    </button>
                 </div>
 
                 <!-- Total Bill Settings -->
                 <div class="bg-slate-800 rounded-2xl p-4 shadow-lg border border-slate-700 mt-6">
-                    <h3 class="font-bold text-sm text-slate-400 mb-3 uppercase tracking-wider">Pengaturan Sesi</h3>
+                    <h3 class="font-bold text-sm text-slate-400 mb-3 uppercase tracking-wider">Hitung Final & Simpan</h3>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1">Total Biaya Sewa PS (Rp)</label>
+                            <label class="block text-xs text-slate-400 mb-1">Total Biaya Sewa Keseluruhan (Rp)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-2 text-slate-400">Rp</span>
-                                <input type="number" id="total-sewa" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors text-lg font-bold" placeholder="0" onchange="updateTotalSewa(this.value)">
+                                <input type="number" id="total-sewa" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-white focus:outline-none focus:border-orange-500 transition-colors text-lg font-bold" placeholder="0" onchange="updateTotalSewa('current_active', this.value)">
                             </div>
                         </div>
-                        <button onclick="showEndSessionModal()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-flag-checkered"></i> Selesaikan Sesi & Hitung
+                        <button onclick="showFinalizeModal()" class="w-full gaming-gradient hover:opacity-90 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check-double"></i> Hitung & Simpan Sesi
                         </button>
                     </div>
                 </div>
             </div>
-
         </div>
 
-        <!-- View: Klasemen -->
+        <!-- ================= VIEW: RIWAYAT ================= -->
+        <div id="view-riwayat" class="hidden space-y-4">
+            <h2 class="font-bold text-lg text-slate-300 text-center mb-4">Riwayat Sesi</h2>
+            <div id="riwayat-list" class="space-y-4">
+                <!-- Diisi oleh JS -->
+            </div>
+        </div>
+
+        <!-- ================= VIEW: KLASEMEN ================= -->
         <div id="view-klasemen" class="hidden space-y-4">
             <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-lg">
                 <div class="p-4 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center">
@@ -151,21 +149,41 @@
                             </tr>
                         </thead>
                         <tbody id="klasemen-list" class="divide-y divide-slate-700/50 text-sm">
-                            <!-- Populated by JS -->
                             <tr><td colspan="4" class="text-center py-8 text-slate-500"><i class="fa-solid fa-circle-notch fa-spin mb-2 block"></i> Memuat data...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-
     </main>
 
-    <!-- End Session / Split Bill Result Modal -->
+    <!-- MODAL: Confirm Add Player Time -->
+    <div id="modal-add-time" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex flex-col justify-center items-center p-4">
+        <div class="bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-700 p-6">
+            <h2 class="text-xl font-bold text-center mb-1">Waktu Mulai</h2>
+            <p class="text-center text-slate-400 text-sm mb-6" id="add-player-display-name"></p>
+            
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 mb-6 flex flex-col items-center">
+                <label class="text-xs text-slate-400 mb-2 uppercase font-bold tracking-wider">Atur Jam (Opsional)</label>
+                <input type="time" id="add-player-time-input" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-xl text-white focus:border-orange-500 outline-none text-center w-full">
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="confirmAddPlayer()" class="w-full py-3 rounded-xl font-bold gaming-gradient text-white shadow-lg shadow-orange-500/30">
+                    <i class="fa-solid fa-check mr-1"></i> Simpan
+                </button>
+                <button onclick="closeAddPlayerModal()" class="w-full py-3 rounded-xl font-semibold bg-slate-700 hover:bg-slate-600 text-white transition-colors">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Receipt / Struk -->
     <div id="modal-result" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex flex-col justify-end sm:justify-center items-center">
-        <div class="bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-700 animate-[slideUp_0.3s_ease-out]">
+        <div class="bg-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-700">
             <div class="p-6">
-                <h2 class="text-2xl font-bold text-center mb-1">Struk Patungan</h2>
+                <h2 class="text-2xl font-bold text-center mb-1" id="modal-receipt-title">Struk Patungan</h2>
                 <p class="text-center text-slate-400 text-sm mb-6" id="modal-date-info">Sesi Hari Ini</p>
 
                 <div class="space-y-4 max-h-[50vh] overflow-y-auto hide-scrollbar mb-6" id="receipt-list">
@@ -174,18 +192,17 @@
 
                 <div class="border-t border-slate-700 pt-4 mb-6">
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-slate-400">Total Waktu Main</span>
-                        <span class="font-bold" id="receipt-total-time">0j 0m</span>
+                        <span class="text-slate-400 text-sm">Total Waktu Main Sesi</span>
+                        <span class="font-bold text-slate-200" id="receipt-total-time">0j 0m</span>
                     </div>
-                    <div class="flex justify-between items-center text-lg">
-                        <span class="text-slate-300 font-medium">Total Tagihan (PS)</span>
-                        <span class="font-bold text-blue-400" id="receipt-total-collected">Rp 0</span>
+                    <div class="flex justify-between items-center text-lg mt-2 pt-2 border-t border-slate-700/50">
+                        <span class="text-slate-300 font-medium">Total Tagihan</span>
+                        <span class="font-bold text-orange-400" id="receipt-total-collected">Rp 0</span>
                     </div>
                 </div>
 
-                <div class="flex gap-3">
-                    <button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-semibold bg-slate-700 hover:bg-slate-600 transition-colors">Batal</button>
-                    <button onclick="confirmEndSession()" class="flex-1 py-3 rounded-xl font-semibold gaming-gradient hover:opacity-90 text-white shadow-lg shadow-blue-500/30 transition-colors">Simpan & Selesai</button>
+                <div class="flex gap-3" id="receipt-buttons">
+                    <!-- Diisi dinamis oleh JS (Tutup vs Simpan Final) -->
                 </div>
             </div>
         </div>
@@ -193,54 +210,49 @@
 
     <!-- Toast Notification -->
     <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-slate-800 border border-slate-700 text-white px-6 py-3 rounded-full shadow-2xl z-[150] opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
-        <i id="toast-icon" class="fa-solid fa-info-circle text-blue-400"></i>
+        <i id="toast-icon" class="fa-solid fa-info-circle text-orange-400"></i>
         <span id="toast-msg" class="text-sm font-medium">Message</span>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, updateDoc, increment, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Konfigurasi Firebase Asli Anda
         const firebaseConfig = {
             apiKey: "AIzaSyCCNcZD9LkFhDjgli7AxlcyXPdIgU55j50",
             authDomain: "patungan-ps.firebaseapp.com",
             projectId: "patungan-ps",
             storageBucket: "patungan-ps.firebasestorage.app",
             messagingSenderId: "366357148263",
-            appId: "1:366357148263:web:fdc6432040c19eaaa69ac2",
-            measurementId: "G-SHPFT2P894"
+            appId: "1:366357148263:web:fdc6432040c19eaaa69ac2"
         };
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
+        let allSessions = [];
         let activeSession = null;
-        let sessionUnsubscribe = null;
-        let statsUnsubscribe = null;
+        let historySessions = [];
         let clockInterval = null;
+        let pendingPlayerName = "";
 
-        const sessionDocPath = `sesi_main/current`;
-        const statsColPath = `klasemen_pemain`;
-
-        // UI Elements
-        const viewSesi = document.getElementById('view-sesi');
-        const viewKlasemen = document.getElementById('view-klasemen');
-        const tabSesiBtn = document.getElementById('tab-sesi');
-        const tabKlasemenBtn = document.getElementById('tab-klasemen');
-        const loadingSesi = document.getElementById('sesi-loading');
-        const startSesiContainer = document.getElementById('sesi-start-container');
-        const activeSesiContainer = document.getElementById('sesi-active-container');
-        const playerListEl = document.getElementById('player-list');
-        const klasemenListEl = document.getElementById('klasemen-list');
-        const totalSewaInput = document.getElementById('total-sewa');
-
-        // Utils
-        const formatRupiah = (number) => {
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number || 0);
+        // UI Tabs
+        window.switchTab = (tab) => {
+            ['sesi', 'riwayat', 'klasemen'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                let btn = document.getElementById(`tab-${t}`);
+                btn.classList.remove('text-orange-400', 'border-orange-500');
+                btn.classList.add('text-slate-400', 'border-transparent');
+            });
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            let activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.classList.add('text-orange-400', 'border-orange-500');
+            activeBtn.classList.remove('text-slate-400', 'border-transparent');
         };
+
+        // Utility
+        const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number || 0);
         
-        // Return jam untuk input time HTML (HH:MM)
         const formatTimeInput = (timestamp) => {
             if (!timestamp) return '';
             const d = new Date(timestamp);
@@ -249,478 +261,432 @@
 
         const calculateDurationMin = (start, end) => {
             if (!start) return 0;
-            const endTime = end || Date.now();
-            return Math.floor((endTime - start) / (1000 * 60)); // in minutes
+            return Math.floor(((end || Date.now()) - start) / 60000);
         };
 
         const formatDuration = (minutes) => {
             if (minutes < 0) return '0m';
             const h = Math.floor(minutes / 60);
             const m = minutes % 60;
-            if (h > 0) return `${h}j ${m}m`;
-            return `${m}m`;
+            return h > 0 ? `${h}j ${m}m` : `${m}m`;
+        };
+
+        const generateTrophies = (count) => {
+            if(!count || count <= 0) return '0';
+            return `${count} <span class="text-xs ml-1">${'🏆'.repeat(count)}</span>`;
         };
 
         window.showToast = (msg, type='info') => {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
-            const icon = document.getElementById('toast-icon');
-            icon.className = 'fa-solid ' + (type === 'success' ? 'fa-check-circle text-green-400' : type === 'error' ? 'fa-exclamation-circle text-red-400' : 'fa-info-circle text-blue-400');
             toast.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 3000);
+            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3000);
         };
 
-        window.switchTab = (tab) => {
-            if (tab === 'sesi') {
-                viewSesi.classList.remove('hidden');
-                viewKlasemen.classList.add('hidden');
-                tabSesiBtn.classList.add('text-blue-400', 'border-blue-500');
-                tabSesiBtn.classList.remove('text-slate-400', 'border-transparent');
-                tabKlasemenBtn.classList.remove('text-blue-400', 'border-blue-500');
-                tabKlasemenBtn.classList.add('text-slate-400', 'border-transparent');
-            } else {
-                viewSesi.classList.add('hidden');
-                viewKlasemen.classList.remove('hidden');
-                tabKlasemenBtn.classList.add('text-blue-400', 'border-blue-500');
-                tabKlasemenBtn.classList.remove('text-slate-400', 'border-transparent');
-                tabSesiBtn.classList.remove('text-blue-400', 'border-blue-500');
-                tabSesiBtn.classList.add('text-slate-400', 'border-transparent');
-                renderKlasemen(); 
-            }
-        };
-
-        function listenToActiveSession() {
-            if (sessionUnsubscribe) sessionUnsubscribe();
+        // Listen to all sessions
+        onSnapshot(collection(db, 'ps_sessions'), (snapshot) => {
+            document.getElementById('sesi-loading').classList.add('hidden');
+            allSessions = [];
+            activeSession = null;
+            historySessions = [];
             
-            const docRef = doc(db, sessionDocPath);
-            sessionUnsubscribe = onSnapshot(docRef, (docSnap) => {
-                loadingSesi.classList.add('hidden');
-                
-                if (docSnap.exists() && docSnap.data().isActive) {
-                    activeSession = docSnap.data();
-                    startSesiContainer.classList.add('hidden');
-                    activeSesiContainer.classList.remove('hidden');
-                    totalSewaInput.value = activeSession.totalSewa || '';
-                    renderActiveSession();
-                    
-                    if(!clockInterval) {
-                        clockInterval = setInterval(renderActiveSession, 60000); 
-                    }
-                } else {
-                    activeSession = null;
-                    startSesiContainer.classList.remove('hidden');
-                    activeSesiContainer.classList.add('hidden');
-                    if(clockInterval) { clearInterval(clockInterval); clockInterval = null; }
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data.isActive && docSnap.id === 'current_active') {
+                    activeSession = { id: docSnap.id, ...data };
+                } else if (!data.isActive && docSnap.id !== 'current_active' && data.players) {
+                    historySessions.push({ id: docSnap.id, ...data });
                 }
-            }, (error) => {
-                console.error("Error listening to session:", error);
-                showToast("Gagal mengambil data sesi", "error");
             });
-        }
 
-        let statsData = [];
-        function listenToStats() {
-            if (statsUnsubscribe) statsUnsubscribe();
-            const colRef = collection(db, statsColPath);
-            statsUnsubscribe = onSnapshot(colRef, (snapshot) => {
-                statsData = [];
-                snapshot.forEach((doc) => {
-                    statsData.push({ id: doc.id, ...doc.data() });
-                });
-                renderKlasemen();
-            });
-        }
+            // Sort history (newest first based on ID which is timestamp)
+            historySessions.sort((a,b) => parseInt(b.id) - parseInt(a.id));
 
+            renderMainActiveSession();
+            renderHistoryTab();
+            computeAndRenderLeaderboard();
+        });
+
+        // ---------------- Sesi Aktif Logic ----------------
         window.startNewSession = async () => {
             try {
-                const newSession = {
-                    isActive: true,
-                    startTime: Date.now(),
-                    totalSewa: 0,
-                    players: []
-                };
-                await setDoc(doc(db, sessionDocPath), newSession);
+                const dateTitle = `Sesi ${new Date().toLocaleDateString('id-ID', {weekday: 'long', day:'numeric', month:'short', year:'numeric'})}`;
+                await setDoc(doc(db, 'ps_sessions', 'current_active'), {
+                    isActive: true, title: dateTitle, totalSewa: 0, players: []
+                });
                 showToast("Sesi baru dimulai!", "success");
-            } catch (error) {
-                console.error(error);
-                showToast("Gagal memulai sesi", "error");
-            }
+            } catch (error) { showToast("Gagal memulai sesi", "error"); }
         };
 
-        window.addPlayer = async () => {
-            if (!activeSession) return;
-            const nameInput = document.getElementById('new-player-name');
-            const name = nameInput.value.trim();
-            
-            if (!name) {
-                showToast("Nama pemain tidak boleh kosong", "error");
-                return;
+        window.openAddPlayerModal = () => {
+            const name = document.getElementById('new-player-name').value.trim();
+            if (!name) return showToast("Nama pemain tidak boleh kosong", "error");
+            if (activeSession && activeSession.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                return showToast("Pemain sudah ada. Klik 'Mulai Lagi' di kartunya.", "error");
             }
+            pendingPlayerName = name;
+            document.getElementById('add-player-display-name').innerText = name;
+            
+            // Set time input to current time
+            const now = new Date();
+            document.getElementById('add-player-time-input').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            document.getElementById('modal-add-time').classList.remove('hidden');
+        };
 
-            // Jika pemain sudah ada, beritahu untuk klik Mulai Lagi di kartunya
-            if (activeSession.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-                showToast("Pemain sudah ada. Klik 'Mulai Lagi' di kartunya.", "error");
-                return;
+        window.closeAddPlayerModal = () => { document.getElementById('modal-add-time').classList.add('hidden'); };
+
+        window.confirmAddPlayer = async () => {
+            if (!activeSession) return;
+            const timeStr = document.getElementById('add-player-time-input').value;
+            let startTime = Date.now();
+            
+            if (timeStr) {
+                let dateObj = new Date();
+                let [hours, minutes] = timeStr.split(':');
+                dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
+                startTime = dateObj.getTime();
             }
 
             const newPlayer = {
-                id: 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                name: name,
-                timeLogs: [{ start: Date.now(), end: null }], // Support multi-sesi per pemain
+                id: 'p_' + Date.now(),
+                name: pendingPlayerName,
+                timeLogs: [{ start: startTime, end: null }],
                 trophies: 0,
                 isActive: true
             };
 
-            const updatedPlayers = [...activeSession.players, newPlayer];
-            
             try {
-                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
-                nameInput.value = '';
-                showToast(`${name} bergabung!`, "success");
-            } catch (error) {
-                console.error(error);
-                showToast("Gagal menambah pemain", "error");
-            }
+                await updateDoc(doc(db, 'ps_sessions', 'current_active'), { 
+                    players: [...activeSession.players, newPlayer] 
+                });
+                document.getElementById('new-player-name').value = '';
+                closeAddPlayerModal();
+                showToast(`${pendingPlayerName} ditambahkan!`, "success");
+            } catch (error) { showToast("Gagal menambah", "error"); }
         };
 
-        // Fungsi stop (Selesai) atau start (Mulai Lagi)
-        window.togglePlayStatus = async (playerId, action) => {
-             if (!activeSession) return;
-             const updatedPlayers = activeSession.players.map(p => {
+        // ---------------- Generic CRUD for any session ----------------
+        window.togglePlayStatus = async (sessionId, playerId, action) => {
+             const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+             if (!session) return;
+             const updatedPlayers = session.players.map(p => {
                  if (p.id === playerId) {
-                     let logs = p.timeLogs || [{start: p.startTime, end: p.endTime}];
-                     
+                     let logs = p.timeLogs || [];
                      if (action === 'stop') {
-                         // Tutup log waktu yang masih berjalan
                          logs = logs.map(l => l.end === null ? { ...l, end: Date.now() } : l);
                          return { ...p, timeLogs: logs, isActive: false };
-                     } 
-                     else if (action === 'start') {
-                         // Buka log waktu baru
+                     } else if (action === 'start') {
                          logs.push({ start: Date.now(), end: null });
                          return { ...p, timeLogs: logs, isActive: true };
                      }
                  }
                  return p;
              });
-
-             try {
-                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
-             } catch (error) {
-                 showToast("Gagal mengubah status", "error");
-             }
+             await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
         };
 
-        // Fungsi manual ubah jam melalui input time
-        window.updateTimeLog = async (playerId, logIndex, field, timeString) => {
-            if (!activeSession) return;
-            const updatedPlayers = activeSession.players.map(p => {
+        window.updateTimeLog = async (sessionId, playerId, logIndex, field, timeString) => {
+            const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+            if (!session) return;
+            const updatedPlayers = session.players.map(p => {
                 if (p.id === playerId) {
-                    let logs = p.timeLogs ? [...p.timeLogs] : [{start: p.startTime, end: p.endTime}];
+                    let logs = [...p.timeLogs];
                     let log = {...logs[logIndex]};
-                    
                     if (timeString) {
-                        // Gabungkan hari ini dengan jam yang di-edit
                         let dateObj = new Date(log[field] || Date.now());
                         let [hours, minutes] = timeString.split(':');
-                        dateObj.setHours(parseInt(hours, 10));
-                        dateObj.setMinutes(parseInt(minutes, 10));
-                        dateObj.setSeconds(0);
+                        dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
                         log[field] = dateObj.getTime();
-                    } else if (field === 'end') {
-                        // Jika jam pulang dikosongkan (di-clear), maka dianggap lanjut main
-                        log[field] = null; 
-                    }
-                    
+                    } else if (field === 'end') { log[field] = null; }
                     logs[logIndex] = log;
-                    
-                    // Cek apakah ada sesi yang masih berjalan (end = null)
-                    let isActive = logs.some(l => l.end === null);
-
-                    return { ...p, timeLogs: logs, isActive: isActive };
+                    return { ...p, timeLogs: logs, isActive: logs.some(l => l.end === null) };
                 }
                 return p;
             });
-
-            try {
-                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
-            } catch (error) {
-                console.error("Gagal update waktu manual");
-            }
+            await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
         };
 
-        window.updateTrophy = async (playerId, delta) => {
-            if (!activeSession) return;
-            const updatedPlayers = activeSession.players.map(p => {
-                 if (p.id === playerId) {
-                     const newTotal = Math.max(0, (p.trophies || 0) + delta);
-                     return { ...p, trophies: newTotal };
-                 }
+        window.updateTrophy = async (sessionId, playerId, delta) => {
+            const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+            if (!session) return;
+            const updatedPlayers = session.players.map(p => {
+                 if (p.id === playerId) return { ...p, trophies: Math.max(0, (p.trophies || 0) + delta) };
                  return p;
              });
-             try {
-                await updateDoc(doc(db, sessionDocPath), { players: updatedPlayers });
-             } catch (e) {
-                showToast("Gagal update trofi", "error");
-             }
+            await updateDoc(doc(db, 'ps_sessions', sessionId), { players: updatedPlayers });
         };
 
-        window.updateTotalSewa = async (value) => {
-             if (!activeSession) return;
+        window.updateTotalSewa = async (sessionId, value) => {
              const total = parseInt(value) || 0;
-             try {
-                await updateDoc(doc(db, sessionDocPath), { totalSewa: total });
-             } catch (e) {}
+             await updateDoc(doc(db, 'ps_sessions', sessionId), { totalSewa: total });
         };
 
-        function renderActiveSession() {
-            if (!activeSession || !activeSession.players) return;
-            
-            if (activeSession.players.length === 0) {
-                playerListEl.innerHTML = `<div class="text-center py-6 text-slate-500 text-sm border border-dashed border-slate-700 rounded-xl">Belum ada pemain. Tambahkan di atas.</div>`;
+        window.stopAllTimers = async () => {
+            if (!activeSession) return;
+            const updatedPlayers = activeSession.players.map(p => {
+                let logs = (p.timeLogs||[]).map(l => l.end === null ? { ...l, end: Date.now() } : l);
+                return { ...p, timeLogs: logs, isActive: false };
+            });
+            await updateDoc(doc(db, 'ps_sessions', 'current_active'), { players: updatedPlayers });
+            showToast("Semua waktu pemain telah dihentikan", "success");
+        };
+
+        // ---------------- UI Renderers ----------------
+        function renderMainActiveSession() {
+            if (!activeSession) {
+                document.getElementById('sesi-start-container').classList.remove('hidden');
+                document.getElementById('sesi-active-container').classList.add('hidden');
+                if(clockInterval) { clearInterval(clockInterval); clockInterval = null; }
                 return;
             }
+            document.getElementById('sesi-start-container').classList.add('hidden');
+            document.getElementById('sesi-active-container').classList.remove('hidden');
+            document.getElementById('active-session-title').innerText = activeSession.title || 'Sesi Aktif Hari Ini';
+            document.getElementById('total-sewa').value = activeSession.totalSewa || '';
+            
+            document.getElementById('player-list-current_active').innerHTML = generatePlayerListHTML(activeSession, true);
+            
+            if(!clockInterval) clockInterval = setInterval(renderMainActiveSession, 60000); 
+        }
 
+        function generatePlayerListHTML(session, isActiveView) {
+            if (!session.players || session.players.length === 0) {
+                return `<div class="text-center py-6 text-slate-500 text-sm border border-dashed border-slate-700 rounded-xl">Belum ada pemain.</div>`;
+            }
             let html = '';
-            activeSession.players.forEach((p) => {
-                // Konversi data lama jika ada
-                const logs = p.timeLogs || [{start: p.startTime, end: p.endTime}];
+            session.players.forEach((p) => {
+                const logs = p.timeLogs || [];
                 let totalDurationMins = 0;
                 let isPlaying = logs.some(l => l.end === null);
 
-                // Buat list kolom jam
                 let logsHtml = '';
                 logs.forEach((log, idx) => {
                     let dur = calculateDurationMin(log.start, log.end);
                     totalDurationMins += dur;
-                    
                     logsHtml += `
-                    <div class="flex items-center gap-2 mt-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
-                        <input type="time" value="${formatTimeInput(log.start)}" onchange="updateTimeLog('${p.id}', ${idx}, 'start', this.value)" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:border-blue-500 outline-none w-24 text-center">
+                    <div class="flex items-center gap-1 sm:gap-2 mt-2 bg-slate-900/50 p-2 rounded-lg border border-slate-700/50">
+                        <input type="time" value="${formatTimeInput(log.start)}" onchange="updateTimeLog('${session.id}', '${p.id}', ${idx}, 'start', this.value)" class="bg-slate-800 border border-slate-600 rounded px-1 sm:px-2 py-1 text-xs sm:text-sm text-white focus:border-orange-500 outline-none w-20 sm:w-24 text-center">
                         <span class="text-slate-500">-</span>
-                        <input type="time" value="${log.end ? formatTimeInput(log.end) : ''}" onchange="updateTimeLog('${p.id}', ${idx}, 'end', this.value)" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:border-blue-500 outline-none w-24 text-center" ${!log.end ? 'placeholder="Sedang Main..."' : ''}>
+                        <input type="time" value="${log.end ? formatTimeInput(log.end) : ''}" onchange="updateTimeLog('${session.id}', '${p.id}', ${idx}, 'end', this.value)" class="bg-slate-800 border border-slate-600 rounded px-1 sm:px-2 py-1 text-xs sm:text-sm text-white focus:border-orange-500 outline-none w-20 sm:w-24 text-center" ${!log.end ? 'placeholder="Main..."' : ''}>
                         <span class="text-xs text-slate-400 font-semibold ml-auto whitespace-nowrap">${formatDuration(dur)}</span>
-                    </div>
-                    `;
+                    </div>`;
                 });
                 
                 html += `
-                <div class="bg-slate-800 rounded-xl p-4 shadow border ${isPlaying ? 'border-blue-500/30 shadow-blue-900/20' : 'border-slate-700 opacity-80'} transition-all">
-                    
+                <div class="bg-slate-800 rounded-xl p-4 shadow border ${isPlaying ? 'border-orange-500/30 shadow-orange-900/20' : 'border-slate-700 opacity-90'} transition-all mb-3">
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center gap-2">
                             <h4 class="font-bold text-lg">${p.name}</h4>
-                            ${isPlaying 
-                                ? '<span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' 
-                                : '<span class="h-2 w-2 rounded-full bg-slate-500"></span>'
-                            }
+                            ${isPlaying ? '<span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' : ''}
                         </div>
-                        
                         ${isPlaying ? `
-                            <button onclick="togglePlayStatus('${p.id}', 'stop')" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors">
-                                <i class="fa-solid fa-stop"></i> Selesai
-                            </button>
+                            <button onclick="togglePlayStatus('${session.id}', '${p.id}', 'stop')" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"><i class="fa-solid fa-stop"></i> Selesai</button>
                         ` : `
-                            <button onclick="togglePlayStatus('${p.id}', 'start')" class="bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors">
-                                <i class="fa-solid fa-play"></i> Mulai Lagi
-                            </button>
+                            <button onclick="togglePlayStatus('${session.id}', '${p.id}', 'start')" class="bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"><i class="fa-solid fa-play"></i> Mulai Lagi</button>
                         `}
                     </div>
-
-                    <!-- Log Waktu Datang & Pulang yang bisa diedit -->
                     <div class="mb-4">
                         ${logsHtml}
                         <div class="text-xs text-slate-400 mt-2 text-right w-full">Total Main: <span class="text-slate-200 font-bold">${formatDuration(totalDurationMins)}</span></div>
                     </div>
-                    
                     <div class="border-t border-slate-700/50 pt-3">
                         <div class="bg-slate-900/50 p-2 rounded-lg flex items-center justify-between">
-                            <label class="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Trofi Match</label>
-                            <div class="flex items-center gap-4">
-                                <button onclick="updateTrophy('${p.id}', -1)" class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition text-sm">-</button>
-                                <span class="font-bold text-yellow-500 text-lg w-4 text-center">${p.trophies || 0}</span>
-                                <button onclick="updateTrophy('${p.id}', 1)" class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center hover:bg-slate-600 transition text-sm">+</button>
+                            <label class="text-[11px] text-slate-400 uppercase font-bold tracking-wider">Total Trofi Sesi</label>
+                            <div class="flex items-center gap-3">
+                                <button onclick="updateTrophy('${session.id}', '${p.id}', -1)" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 transition text-sm">-</button>
+                                <span class="font-bold text-yellow-500 text-lg text-center" style="min-width:40px;">${generateTrophies(p.trophies)}</span>
+                                <button onclick="updateTrophy('${session.id}', '${p.id}', 1)" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 transition text-sm">+</button>
                             </div>
                         </div>
                     </div>
-                </div>
-                `;
+                </div>`;
             });
-            playerListEl.innerHTML = html;
+            return html;
         }
 
-        function renderKlasemen() {
-            if (!statsData || statsData.length === 0) {
-                klasemenListEl.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-500">Belum ada data klasemen.</td></tr>`;
+        window.toggleHistoryDetails = (id) => {
+            const el = document.getElementById(`hist-details-${id}`);
+            el.classList.toggle('hidden');
+        };
+
+        function renderHistoryTab() {
+            const listEl = document.getElementById('riwayat-list');
+            if (historySessions.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-10 text-slate-500">Belum ada riwayat sesi.</div>`;
+                return;
+            }
+            let html = '';
+            historySessions.forEach(session => {
+                html += `
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                    <div class="p-4 bg-slate-900/50 flex justify-between items-center cursor-pointer" onclick="toggleHistoryDetails('${session.id}')">
+                        <div>
+                            <h3 class="font-bold text-orange-400">${session.title}</h3>
+                            <p class="text-xs text-slate-400 mt-1">${session.players.length} Pemain | Total Rp ${formatRupiah(session.totalSewa).replace('Rp','')}</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-slate-500"></i>
+                    </div>
+                    <div id="hist-details-${session.id}" class="hidden p-4 border-t border-slate-700 bg-slate-800">
+                        
+                        <div class="mb-4">
+                            <label class="block text-xs text-slate-400 mb-1">Edit Total Biaya (Rp)</label>
+                            <div class="relative max-w-[200px]">
+                                <span class="absolute left-3 top-2 text-slate-400">Rp</span>
+                                <input type="number" value="${session.totalSewa || 0}" onchange="updateTotalSewa('${session.id}', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-white focus:outline-none focus:border-orange-500 text-sm font-bold">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 mb-4">
+                            ${generatePlayerListHTML(session, false)}
+                        </div>
+                        <button onclick="showReviewModal('${session.id}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors text-sm">
+                            <i class="fa-solid fa-receipt"></i> Lihat Struk Sesi Ini
+                        </button>
+                    </div>
+                </div>`;
+            });
+            listEl.innerHTML = html;
+        }
+
+        // Leaderboard Calculation directly from all history
+        function computeAndRenderLeaderboard() {
+            let stats = {};
+            historySessions.forEach(session => {
+                let maxT = 0;
+                session.players.forEach(p => { if ((p.trophies||0) > maxT) maxT = p.trophies||0; });
+                
+                session.players.forEach(p => {
+                    const name = p.name.trim();
+                    if (!stats[name]) stats[name] = { name: name, trophies: 0, champs: 0 };
+                    stats[name].trophies += (p.trophies || 0);
+                    if (maxT > 0 && (p.trophies||0) === maxT) stats[name].champs += 1;
+                });
+            });
+
+            const sorted = Object.values(stats).sort((a,b) => b.champs !== a.champs ? b.champs - a.champs : b.trophies - a.trophies);
+            
+            const listEl = document.getElementById('klasemen-list');
+            if (sorted.length === 0) {
+                listEl.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-500">Belum ada data dari riwayat sesi.</td></tr>`;
                 return;
             }
 
-            const sorted = [...statsData].sort((a, b) => {
-                if ((b.championships || 0) !== (a.championships || 0)) {
-                    return (b.championships || 0) - (a.championships || 0);
-                }
-                return (b.totalTrophies || 0) - (a.totalTrophies || 0);
-            });
-
             let html = '';
             sorted.forEach((p, index) => {
-                let rankStyle = 'text-slate-400';
-                let rowBg = '';
-                if (index === 0) { rankStyle = 'text-yellow-400 font-bold'; rowBg = 'bg-yellow-500/5'; }
-                else if (index === 1) { rankStyle = 'text-slate-300 font-bold'; }
-                else if (index === 2) { rankStyle = 'text-amber-600 font-bold'; }
-
+                let rankStyle = index === 0 ? 'text-yellow-400 font-bold' : (index===1 ? 'text-slate-300 font-bold' : (index===2 ? 'text-amber-600 font-bold' : 'text-slate-400'));
+                let rowBg = index === 0 ? 'bg-yellow-500/5' : '';
                 html += `
                 <tr class="${rowBg} hover:bg-slate-700/30 transition-colors">
                     <td class="p-3 pl-4 text-center ${rankStyle}">${index + 1}</td>
                     <td class="p-3 font-semibold">${p.name}</td>
-                    <td class="p-3 text-center text-yellow-500 font-bold">${p.championships || 0}</td>
-                    <td class="p-3 text-center text-slate-300">${p.totalTrophies || 0}</td>
-                </tr>
-                `;
+                    <td class="p-3 text-center text-yellow-500 font-bold">${p.champs}</td>
+                    <td class="p-3 text-center text-slate-300">${p.trophies}</td>
+                </tr>`;
             });
-            klasemenListEl.innerHTML = html;
+            listEl.innerHTML = html;
         }
 
-        let calculationResults = [];
+        // ---------------- Bill / Receipt Modal ----------------
+        window.closeModal = () => { document.getElementById('modal-result').classList.add('hidden'); };
 
-        window.showEndSessionModal = () => {
-            if (!activeSession || activeSession.players.length === 0) {
-                showToast("Tidak ada pemain di sesi ini", "error");
-                return;
-            }
+        window.showReviewModal = (sessionId) => { calculateAndShowModal(sessionId, false); };
+        window.showFinalizeModal = () => { calculateAndShowModal('current_active', true); };
 
-            const totalSewa = activeSession.totalSewa || 0;
-            let totalDurationMin = 0;
+        function calculateAndShowModal(sessionId, isFinalizing) {
+            const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => s.id === sessionId);
+            if (!session || session.players.length === 0) return showToast("Tidak ada pemain", "error");
+
+            const totalSewa = session.totalSewa || 0;
             
-            // Hitung total durasi gabungan dari setiap log waktu
-            const tempPlayers = activeSession.players.map(p => {
-                const logs = p.timeLogs || [{start: p.startTime, end: p.endTime}];
-                let playerDur = 0;
-                logs.forEach(l => {
-                    playerDur += calculateDurationMin(l.start, l.end);
+            // Calculate Global Session Boundaries (Start to Finish)
+            let globalMin = Infinity;
+            let globalMax = 0;
+            
+            let totalIndividualMins = 0; // Sum of all pieces for splitting ratio
+            
+            const tempPlayers = session.players.map(p => {
+                let pDuration = 0;
+                (p.timeLogs||[]).forEach(l => {
+                    if (l.start < globalMin) globalMin = l.start;
+                    let end = l.end || Date.now();
+                    if (end > globalMax) globalMax = end;
+                    pDuration += calculateDurationMin(l.start, l.end);
                 });
-                
-                totalDurationMin += playerDur;
-                return { ...p, calcDuration: playerDur };
+                totalIndividualMins += pDuration;
+                return { ...p, calcDuration: pDuration };
             });
 
-            let totalBillSum = 0;
-            calculationResults = tempPlayers.map(p => {
-                let shareSewa = 0;
-                if (totalDurationMin > 0) {
-                    shareSewa = (p.calcDuration / totalDurationMin) * totalSewa;
-                }
-                const totalBayar = Math.round(shareSewa); // Tanpa Extra Cost
-                totalBillSum += totalBayar;
-
-                return {
-                    ...p,
-                    shareSewa: Math.round(shareSewa),
-                    totalBayar: totalBayar
-                };
-            });
+            // Waktu Total Keseluruhan (Dari pertama datang sampai terakhir pulang)
+            let overallSessionDuration = 0;
+            if (globalMax > globalMin) overallSessionDuration = Math.floor((globalMax - globalMin) / 60000);
 
             let maxTrophy = -1;
-            calculationResults.forEach(p => {
-                if ((p.trophies||0) > maxTrophy) maxTrophy = p.trophies || 0;
-            });
-            
-            const receiptListEl = document.getElementById('receipt-list');
+            tempPlayers.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
+
+            let totalBillSum = 0;
             let receiptHtml = '';
             
-            calculationResults.forEach(p => {
+            tempPlayers.forEach(p => {
+                let shareSewa = totalIndividualMins > 0 ? (p.calcDuration / totalIndividualMins) * totalSewa : 0;
+                let totalBayar = Math.round(shareSewa);
+                totalBillSum += totalBayar;
+                
                 const isChamp = maxTrophy > 0 && (p.trophies||0) === maxTrophy;
                 receiptHtml += `
                 <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 flex justify-between items-center">
                     <div>
-                        <div class="font-bold flex items-center gap-1">
-                            ${p.name} 
-                            ${isChamp ? '<i class="fa-solid fa-crown text-yellow-500 text-xs ml-1" title="Juara Sesi"></i>' : ''}
-                        </div>
-                        <div class="text-xs text-slate-400 mt-0.5">
-                            ${formatDuration(p.calcDuration)} main
-                        </div>
+                        <div class="font-bold flex items-center gap-1">${p.name} ${isChamp ? '<i class="fa-solid fa-crown text-yellow-500 text-xs ml-1"></i>' : ''}</div>
+                        <div class="text-xs text-slate-400 mt-0.5">${formatDuration(p.calcDuration)} main</div>
                     </div>
                     <div class="font-bold text-blue-400 text-right">
-                        ${formatRupiah(p.totalBayar)}
-                        <div class="text-[10px] text-slate-500 font-normal mt-0.5">${p.trophies||0} Trofi</div>
+                        ${formatRupiah(totalBayar)}
+                        <div class="text-[10px] text-slate-500 font-normal mt-0.5">${generateTrophies(p.trophies)}</div>
                     </div>
-                </div>
-                `;
+                </div>`;
             });
 
-            receiptListEl.innerHTML = receiptHtml;
-            document.getElementById('receipt-total-time').innerText = formatDuration(totalDurationMin);
+            document.getElementById('receipt-list').innerHTML = receiptHtml;
+            document.getElementById('receipt-total-time').innerText = formatDuration(overallSessionDuration);
             document.getElementById('receipt-total-collected').innerText = formatRupiah(totalBillSum);
-            
-            const dateStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            document.getElementById('modal-date-info').innerText = dateStr;
+            document.getElementById('modal-receipt-title').innerText = isFinalizing ? "Hitung Final" : "Struk Sementara";
+            document.getElementById('modal-date-info').innerText = session.title;
 
-            document.getElementById('modal-result').classList.remove('hidden');
-        };
-
-        window.closeModal = () => {
-            document.getElementById('modal-result').classList.add('hidden');
-        };
-
-        window.confirmEndSession = async () => {
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menyimpan...';
-            btn.disabled = true;
-
-            try {
-                let maxTrophy = 0;
-                calculationResults.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
-
-                const batch = writeBatch(db);
-                
-                for (const player of calculationResults) {
-                    const statDocId = player.name.trim().toLowerCase();
-                    const statRef = doc(db, statsColPath, statDocId);
-                    const isChampion = (maxTrophy > 0 && (player.trophies||0) === maxTrophy);
-                    const statSnap = await getDoc(statRef);
-                    
-                    if (statSnap.exists()) {
-                        batch.update(statRef, {
-                            totalTrophies: increment(player.trophies||0),
-                            championships: isChampion ? increment(1) : increment(0)
-                        });
-                    } else {
-                        batch.set(statRef, {
-                            name: player.name.trim(),
-                            totalTrophies: player.trophies || 0,
-                            championships: isChampion ? 1 : 0
-                        });
-                    }
-                }
-
-                const sessionRef = doc(db, sessionDocPath);
-                batch.update(sessionRef, {
-                    isActive: false,
-                    endedAt: Date.now(),
-                    finalData: calculationResults 
-                });
-
-                await batch.commit();
-
-                showToast("Sesi berhasil diselesaikan!", "success");
-                closeModal();
-                
-            } catch (error) {
-                console.error("Error saving session:", error);
-                showToast("Terjadi kesalahan saat menyimpan", "error");
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+            // Buttons based on context
+            let btns = `<button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-semibold bg-slate-700 hover:bg-slate-600 transition-colors">Tutup</button>`;
+            if (isFinalizing) {
+                btns += `<button onclick="executeFinalizeSession()" class="flex-1 py-3 rounded-xl font-semibold gaming-gradient hover:opacity-90 text-white shadow-lg shadow-orange-500/30">SELESAI (Simpan)</button>`;
             }
-        };
+            document.getElementById('receipt-buttons').innerHTML = btns;
+            document.getElementById('modal-result').classList.remove('hidden');
+        }
 
-        // Jalankan koneksi!
-        listenToActiveSession();
-        listenToStats();
+        window.executeFinalizeSession = async () => {
+            if (!activeSession) return;
+            try {
+                // Hentikan semua waktu dulu untuk memastikan aman
+                const updatedPlayers = activeSession.players.map(p => {
+                    let logs = (p.timeLogs||[]).map(l => l.end === null ? { ...l, end: Date.now() } : l);
+                    return { ...p, timeLogs: logs, isActive: false };
+                });
+                
+                const finalData = {
+                    ...activeSession,
+                    players: updatedPlayers,
+                    isActive: false, 
+                    endTime: Date.now() 
+                };
+
+                // Pindah ke doc baru sebagai riwayat (menggunakan timestamp id)
+                await setDoc(doc(db, 'ps_sessions', Date.now().toString()), finalData);
+                
+                // Kosongkan sesi aktif
+                await deleteDoc(doc(db, 'ps_sessions', 'current_active'));
+                
+                closeModal();
+                showToast("Sesi berhasil disimpan ke riwayat!", "success");
+            } catch (error) { showToast("Gagal menyimpan sesi final", "error"); }
+        };
 
     </script>
 </body>
