@@ -194,15 +194,15 @@
             firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         } catch(e) { console.error("Invalid firebase config"); }
 
-        // Fallback config for local testing if env vars not present
-        if (!firebaseConfig) {
-             firebaseConfig = {
-                // Dummy config to prevent crashes if run completely outside intended environment
-                // Will not actually connect to a DB without valid credentials
-                apiKey: "dummy", projectId: "dummy"
-            };
-        }
-
+const firebaseConfig = {
+  apiKey: "AIzaSyCCNcZD9LkFhDjgli7AxlcyXPdIgU55j50",
+  authDomain: "patungan-ps.firebaseapp.com",
+  projectId: "patungan-ps",
+  storageBucket: "patungan-ps.firebasestorage.app",
+  messagingSenderId: "366357148263",
+  appId: "1:366357148263:web:fdc6432040c19eaaa69ac2",
+  measurementId: "G-SHPFT2P894"
+};
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
