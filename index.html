@@ -22,7 +22,7 @@
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: -1;
-            opacity: 0.08; /* Transparansi rendah agar teks tetap terbaca */
+            opacity: 0.08; /* Transparansi rendah agar tulisan putih tidak silau */
             pointer-events: none; 
             background-image: 
                 url('https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg'),
@@ -352,7 +352,7 @@
                 }
             });
 
-            // Perbaikan Bug Urutan Riwayat: Mengurutkan murni berdasarkan Tanggal Descending (Terbaru di atas)
+            // Urutkan Riwayat dari Tanggal Terbaru
             historySessions.sort((a, b) => {
                 const dateA = new Date(a.sessionDate || 0).getTime();
                 const dateB = new Date(b.sessionDate || 0).getTime();
@@ -649,22 +649,11 @@
             return html;
         }
 
-        // Perbaikan Bug Klik Buka Detail Riwayat
-        window.toggleHistoryDetails = (id) => { 
-            const domId = String(id).replace(/[^a-zA-Z0-9]/g, '_');
-            document.getElementById(`hist-details-${domId}`).classList.toggle('hidden'); 
-        };
-        window.toggleEditMode = (id, isEdit) => {
-            const domId = String(id).replace(/[^a-zA-Z0-9]/g, '_');
-            if(isEdit) {
-                document.getElementById(`hist-struk-${domId}`).classList.add('hidden');
-                document.getElementById(`hist-edit-${domId}`).classList.remove('hidden');
-            } else {
-                document.getElementById(`hist-edit-${domId}`).classList.add('hidden');
-                document.getElementById(`hist-struk-${domId}`).classList.remove('hidden');
-            }
-        };
-
+        // ================= PERBAIKAN BUG UTAMA =================
+        // Menghapus penggunaan ID spesifik yang bentrok pada DOM, 
+        // dan merubahnya menggunakan teknik DOM Traversal murni.
+        // ========================================================
+        
         function renderHistoryTab() {
             const listEl = document.getElementById('riwayat-list');
             if (historySessions.length === 0) {
@@ -674,8 +663,6 @@
             let html = '';
             
             historySessions.forEach(session => {
-                const domId = String(session.id).replace(/[^a-zA-Z0-9]/g, '_');
-                
                 let maxTrophy = 0;
                 session.players.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
                 let champs = [];
@@ -727,9 +714,12 @@
                     </div>`;
                 });
 
+                // Perbaikan 100% Bebas Bug Nyangkut DOM Toggles
                 html += `
-                <div class="bg-slate-800/90 rounded-2xl border border-slate-700 overflow-hidden shadow-lg backdrop-blur-sm">
-                    <div class="p-4 bg-slate-900/50 cursor-pointer hover:bg-slate-800 transition" onclick="toggleHistoryDetails('${session.id}')">
+                <div class="bg-slate-800/90 rounded-2xl border border-slate-700 overflow-hidden shadow-lg backdrop-blur-sm riwayat-card mb-4">
+                    
+                    <!-- KEPALA KARTU RIWAYAT YG BISA DI KLIK -->
+                    <div class="p-4 bg-slate-900/50 cursor-pointer hover:bg-slate-800 transition" onclick="this.nextElementSibling.classList.toggle('hidden')">
                         <div class="flex justify-between items-start">
                             <div>
                                 <h3 class="font-bold text-orange-400">${session.title}</h3>
@@ -740,10 +730,11 @@
                         </div>
                     </div>
                     
-                    <div id="hist-details-${domId}" class="hidden">
+                    <!-- ISI DETAIL KARTU -->
+                    <div class="hidden riwayat-detail">
                         
                         <!-- STRUK VIEW -->
-                        <div id="hist-struk-${domId}" class="p-4 border-t border-slate-700 bg-slate-800/90">
+                        <div class="hist-struk p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="mb-4">
                                 <h4 class="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider text-center">Struk Sesi & Pembayaran</h4>
                                 <div class="max-h-64 overflow-y-auto hide-scrollbar">
@@ -755,16 +746,24 @@
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="toggleEditMode('${session.id}', true)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
+                                <button onclick="
+                                    const container = this.closest('.riwayat-detail');
+                                    container.querySelector('.hist-struk').classList.add('hidden');
+                                    container.querySelector('.hist-edit').classList.remove('hidden');
+                                " class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
                                 <button onclick="deleteSession('${session.id}')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
 
                         <!-- EDIT VIEW -->
-                        <div id="hist-edit-${domId}" class="hidden p-4 border-t border-slate-700 bg-slate-800/90">
+                        <div class="hist-edit hidden p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="font-bold text-slate-300 text-sm"><i class="fa-solid fa-pen-to-square text-orange-400 mr-1"></i> Mode Edit</h4>
-                                <button onclick="toggleEditMode('${session.id}', false)" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition">Selesai Edit</button>
+                                <button onclick="
+                                    const container = this.closest('.riwayat-detail');
+                                    container.querySelector('.hist-edit').classList.add('hidden');
+                                    container.querySelector('.hist-struk').classList.remove('hidden');
+                                " class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition">Selesai Edit</button>
                             </div>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700">
@@ -840,7 +839,6 @@
         // ---------------- Modal Review & Simpan Sesi Aktif ----------------
         window.closeModal = () => { document.getElementById('modal-result').classList.add('hidden'); };
 
-        // Perbaikan Bug Data Struk Modal
         window.showReviewModal = (sessionId) => { calculateAndShowModal(String(sessionId), false); };
         window.showFinalizeModal = () => { calculateAndShowModal('current_active', true); };
 
@@ -921,7 +919,6 @@
                     endTime: Date.now() 
                 };
 
-                // Perbaikan: Pakai ID dengan prefix string untuk mencegah bug JS
                 const uniqueId = `session_${Date.now()}`;
                 await setDoc(doc(db, 'ps_sessions', uniqueId), finalData);
                 await deleteDoc(doc(db, 'ps_sessions', 'current_active'));
