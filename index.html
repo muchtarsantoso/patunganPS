@@ -14,7 +14,7 @@
             color: #f8fafc; /* Slate 50 */
         }
         .gaming-gradient {
-            background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); /* Orange/Red for DKriuk */
+            background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
         }
         .gaming-text {
             background: linear-gradient(135deg, #f87171 0%, #fb923c 100%);
@@ -72,8 +72,11 @@
 
             <!-- Active Session Area -->
             <div id="sesi-active-container" class="hidden space-y-4">
-                <div class="text-center">
-                    <h2 class="font-bold text-lg text-orange-400" id="active-session-title">Sesi Aktif Hari Ini</h2>
+                <div class="text-center bg-slate-800/50 rounded-xl p-2 border border-slate-700">
+                    <div class="flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-pen text-slate-500 text-xs"></i>
+                        <input type="text" id="active-session-title" onchange="updateSessionTitle('current_active', this.value)" class="font-bold text-lg text-orange-400 bg-transparent text-center focus:outline-none focus:border-b border-orange-500 w-full sm:w-3/4 transition-colors" placeholder="Ketik Nama/Tanggal Sesi...">
+                    </div>
                 </div>
 
                 <!-- Tambah Pemain -->
@@ -97,10 +100,10 @@
 
                 <!-- Control Buttons -->
                 <div class="grid grid-cols-2 gap-3 mt-4">
-                    <button onclick="showReviewModal('current_active')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-2 rounded-xl text-sm transition-colors shadow-lg">
+                    <button onclick="showReviewModal('current_active')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-2 rounded-xl text-sm transition-colors shadow-lg flex items-center justify-center gap-2">
                         <i class="fa-solid fa-eye"></i> Review Sementara
                     </button>
-                    <button onclick="stopAllTimers()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-2 rounded-xl text-sm transition-colors shadow-lg">
+                    <button onclick="stopAllTimers()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-2 rounded-xl text-sm transition-colors shadow-lg flex items-center justify-center gap-2">
                         <i class="fa-solid fa-stop"></i> Selesaikan Sesi
                     </button>
                 </div>
@@ -202,7 +205,7 @@
                 </div>
 
                 <div class="flex gap-3" id="receipt-buttons">
-                    <!-- Diisi dinamis oleh JS (Tutup vs Simpan Final) -->
+                    <!-- Diisi dinamis oleh JS -->
                 </div>
             </div>
         </div>
@@ -299,7 +302,6 @@
                 }
             });
 
-            // Sort history (newest first based on ID which is timestamp)
             historySessions.sort((a,b) => parseInt(b.id) - parseInt(a.id));
 
             renderMainActiveSession();
@@ -327,7 +329,6 @@
             pendingPlayerName = name;
             document.getElementById('add-player-display-name').innerText = name;
             
-            // Set time input to current time
             const now = new Date();
             document.getElementById('add-player-time-input').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             
@@ -421,6 +422,16 @@
              const total = parseInt(value) || 0;
              await updateDoc(doc(db, 'ps_sessions', sessionId), { totalSewa: total });
         };
+        
+        // Fungsi Update Nama/Tanggal Sesi
+        window.updateSessionTitle = async (sessionId, newTitle) => {
+             const title = newTitle.trim();
+             if (!title) return;
+             try {
+                 await updateDoc(doc(db, 'ps_sessions', sessionId), { title: title });
+                 showToast("Nama sesi berhasil diubah", "success");
+             } catch (error) { showToast("Gagal mengubah nama sesi", "error"); }
+        };
 
         window.stopAllTimers = async () => {
             if (!activeSession) return;
@@ -442,7 +453,9 @@
             }
             document.getElementById('sesi-start-container').classList.add('hidden');
             document.getElementById('sesi-active-container').classList.remove('hidden');
-            document.getElementById('active-session-title').innerText = activeSession.title || 'Sesi Aktif Hari Ini';
+            
+            // Set value input nama sesi
+            document.getElementById('active-session-title').value = activeSession.title || '';
             document.getElementById('total-sewa').value = activeSession.totalSewa || '';
             
             document.getElementById('player-list-current_active').innerHTML = generatePlayerListHTML(activeSession, true);
@@ -529,11 +542,20 @@
                     </div>
                     <div id="hist-details-${session.id}" class="hidden p-4 border-t border-slate-700 bg-slate-800">
                         
-                        <div class="mb-4">
-                            <label class="block text-xs text-slate-400 mb-1">Edit Total Biaya (Rp)</label>
-                            <div class="relative max-w-[200px]">
-                                <span class="absolute left-3 top-2 text-slate-400">Rp</span>
-                                <input type="number" value="${session.totalSewa || 0}" onchange="updateTotalSewa('${session.id}', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-white focus:outline-none focus:border-orange-500 text-sm font-bold">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Edit Nama / Tanggal Sesi</label>
+                                <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl overflow-hidden focus-within:border-orange-500">
+                                    <div class="pl-3 text-slate-500"><i class="fa-solid fa-pen text-xs"></i></div>
+                                    <input type="text" value="${session.title}" onchange="updateSessionTitle('${session.id}', this.value)" class="w-full bg-transparent px-3 py-2 text-white outline-none text-sm font-bold">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Edit Total Biaya (Rp)</label>
+                                <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl overflow-hidden focus-within:border-orange-500">
+                                    <div class="pl-3 text-slate-500 text-sm">Rp</div>
+                                    <input type="number" value="${session.totalSewa || 0}" onchange="updateTotalSewa('${session.id}', this.value)" class="w-full bg-transparent px-3 py-2 text-white outline-none text-sm font-bold">
+                                </div>
                             </div>
                         </div>
 
@@ -549,7 +571,6 @@
             listEl.innerHTML = html;
         }
 
-        // Leaderboard Calculation directly from all history
         function computeAndRenderLeaderboard() {
             let stats = {};
             historySessions.forEach(session => {
@@ -599,11 +620,9 @@
 
             const totalSewa = session.totalSewa || 0;
             
-            // Calculate Global Session Boundaries (Start to Finish)
             let globalMin = Infinity;
             let globalMax = 0;
-            
-            let totalIndividualMins = 0; // Sum of all pieces for splitting ratio
+            let totalIndividualMins = 0; 
             
             const tempPlayers = session.players.map(p => {
                 let pDuration = 0;
@@ -617,7 +636,6 @@
                 return { ...p, calcDuration: pDuration };
             });
 
-            // Waktu Total Keseluruhan (Dari pertama datang sampai terakhir pulang)
             let overallSessionDuration = 0;
             if (globalMax > globalMin) overallSessionDuration = Math.floor((globalMax - globalMin) / 60000);
 
@@ -652,7 +670,6 @@
             document.getElementById('modal-receipt-title').innerText = isFinalizing ? "Hitung Final" : "Struk Sementara";
             document.getElementById('modal-date-info').innerText = session.title;
 
-            // Buttons based on context
             let btns = `<button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-semibold bg-slate-700 hover:bg-slate-600 transition-colors">Tutup</button>`;
             if (isFinalizing) {
                 btns += `<button onclick="executeFinalizeSession()" class="flex-1 py-3 rounded-xl font-semibold gaming-gradient hover:opacity-90 text-white shadow-lg shadow-orange-500/30">SELESAI (Simpan)</button>`;
@@ -664,7 +681,6 @@
         window.executeFinalizeSession = async () => {
             if (!activeSession) return;
             try {
-                // Hentikan semua waktu dulu untuk memastikan aman
                 const updatedPlayers = activeSession.players.map(p => {
                     let logs = (p.timeLogs||[]).map(l => l.end === null ? { ...l, end: Date.now() } : l);
                     return { ...p, timeLogs: logs, isActive: false };
@@ -677,17 +693,13 @@
                     endTime: Date.now() 
                 };
 
-                // Pindah ke doc baru sebagai riwayat (menggunakan timestamp id)
                 await setDoc(doc(db, 'ps_sessions', Date.now().toString()), finalData);
-                
-                // Kosongkan sesi aktif
                 await deleteDoc(doc(db, 'ps_sessions', 'current_active'));
                 
                 closeModal();
                 showToast("Sesi berhasil disimpan ke riwayat!", "success");
             } catch (error) { showToast("Gagal menyimpan sesi final", "error"); }
         };
-
     </script>
 </body>
 </html>
