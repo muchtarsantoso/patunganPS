@@ -41,9 +41,7 @@
             background-position: 
                 5% 5%, 90% 5%, 10% 40%, 85% 35%, 50% 20%, 75% 65%, 25% 75%, 50% 85%, 45% 50%,
                 30% 10%, 70% 10%, 15% 95%, 85% 90%, 5% 60%;
-            background-size: 
-                130px, 120px, 140px, 130px, 150px, 140px, 130px, 110px, 100px,
-                120px, 130px, 100px, 120px, 130px;
+            background-size: 130px, 120px, 140px, 130px, 150px, 140px, 130px, 110px, 100px, 120px, 130px, 100px, 120px, 130px;
             background-repeat: no-repeat;
         }
 
@@ -63,7 +61,8 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col pb-20">
-        <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+
+    <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
         <div class="max-w-md mx-auto px-4 py-4 flex justify-center items-center">
             <h1 class="text-2xl font-bold gaming-text flex items-center gap-2">
                 <i class="fa-solid fa-gamepad"></i> DKriuk PS Championship
@@ -81,14 +80,15 @@
             </button>
         </div>
     </header>
-
-    <main class="flex-1 max-w-md w-full mx-auto p-4">
-        <!-- VIEW: SESI AKTIF -->
+        <main class="flex-1 max-w-md w-full mx-auto p-4">
+        
+        <!-- ================= VIEW: SESI AKTIF ================= -->
         <div id="view-sesi" class="space-y-6 block">
             <div id="sesi-loading" class="text-center py-10 text-slate-400">
                 <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><p>Memuat sesi...</p>
             </div>
 
+            <!-- Start Session Screen -->
             <div id="sesi-start-container" class="hidden text-center py-12 flex flex-col items-center justify-center min-h-[55vh]">
                 <div class="w-[84px] h-[84px] rounded-full bg-slate-800/90 flex items-center justify-center mb-6 shadow-[0_0_35px_rgba(249,115,22,0.15)] relative border border-slate-700/50">
                     <i class="fa-solid fa-power-off text-[32px] text-slate-400 relative z-10"></i>
@@ -100,6 +100,7 @@
                 </button>
             </div>
 
+            <!-- Active Session Area -->
             <div id="sesi-active-container" class="hidden space-y-4">
                 <div class="text-center bg-slate-800/80 rounded-xl p-3 border border-slate-700 relative overflow-hidden shadow-lg">
                     <label class="block text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-bold">Tanggal Sesi Aktif</label>
@@ -144,13 +145,13 @@
                 </div>
             </div>
         </div>
-                <!-- VIEW: RIWAYAT -->
+                <!-- ================= VIEW: RIWAYAT ================= -->
         <div id="view-riwayat" class="hidden space-y-4">
             <h2 class="font-bold text-lg text-slate-300 text-center mb-4">Riwayat Sesi</h2>
             <div id="riwayat-list" class="space-y-4"></div>
         </div>
 
-        <!-- VIEW: KLASEMEN -->
+        <!-- ================= VIEW: KLASEMEN ================= -->
         <div id="view-klasemen" class="hidden space-y-4">
             <div class="bg-slate-800/90 rounded-2xl overflow-hidden border border-slate-700 shadow-lg">
                 <div class="p-4 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center">
@@ -225,8 +226,7 @@
         <i id="toast-icon" class="fa-solid fa-info-circle text-orange-400"></i>
         <span id="toast-msg" class="text-sm font-medium">Message</span>
     </div>
-
-    <script type="module">
+        <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -241,28 +241,22 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        let allSessions = [];
-        let activeSession = null;
-        let historySessions = [];
-        let clockInterval = null;
-        
+        let allSessions = []; let activeSession = null; let historySessions = []; let clockInterval = null;
         const defaultPlayerNames = ["Jun", "Muchtar", "Ekky", "Ramdan", "Rendy", "Widi"];
-        let selectedNewPlayers = [];
-        let currentAddPlayerSessionId = null;
+        let selectedNewPlayers = []; let currentAddPlayerSessionId = null;
 
         window.switchTab = (tab) => {
             ['sesi', 'riwayat', 'klasemen'].forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
                 let btn = document.getElementById(`tab-${t}`);
-                btn.classList.remove('text-orange-400', 'border-orange-500');
-                btn.classList.add('text-slate-400', 'border-transparent');
+                btn.classList.remove('text-orange-400', 'border-orange-500'); btn.classList.add('text-slate-400', 'border-transparent');
             });
             document.getElementById(`view-${tab}`).classList.remove('hidden');
             let activeBtn = document.getElementById(`tab-${tab}`);
-            activeBtn.classList.add('text-orange-400', 'border-orange-500');
-            activeBtn.classList.remove('text-slate-400', 'border-transparent');
+            activeBtn.classList.add('text-orange-400', 'border-orange-500'); activeBtn.classList.remove('text-slate-400', 'border-transparent');
         };
-                const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number || 0);
+
+        const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number || 0);
         const formatTimeInput = (timestamp) => {
             if (!timestamp) return '';
             const d = new Date(timestamp);
@@ -275,18 +269,13 @@
         };
         const formatDuration = (minutes) => {
             if (minutes < 0) return '0m';
-            const h = Math.floor(minutes / 60);
-            const m = minutes % 60;
+            const h = Math.floor(minutes / 60); const m = minutes % 60;
             return h > 0 ? `${h}j ${m}m` : `${m}m`;
         };
-        const generateTrophies = (count) => {
-            if(!count || count <= 0) return '0';
-            return `${count} <span class="text-xs ml-1">${'🏆'.repeat(count)}</span>`;
-        };
+        const generateTrophies = (count) => { return (!count || count <= 0) ? '0' : `${count} <span class="text-xs ml-1">${'🏆'.repeat(count)}</span>`; };
         const formatDateToTitle = (dateString) => {
             if (!dateString) return 'Sesi Baru';
-            const d = new Date(dateString);
-            return `Sesi ${d.toLocaleDateString('id-ID', {weekday: 'long', day:'numeric', month:'short', year:'numeric'})}`;
+            return `Sesi ${new Date(dateString).toLocaleDateString('id-ID', {weekday: 'long', day:'numeric', month:'short', year:'numeric'})}`;
         };
         window.showToast = (msg, type='info') => {
             const toast = document.getElementById('toast');
@@ -295,16 +284,21 @@
             setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3000);
         };
 
-        // NEW LOGIC: Fungsi Tie-breaker Juara Harian
+        // PENCARI SESI CERDAS (Anti-Error / Sesi Tidak Ditemukan)
+        function getSessionById(rawId) {
+            const id = String(rawId).trim();
+            if (activeSession && activeSession.id === id) return activeSession;
+            return historySessions.find(s => String(s.id).trim() === id);
+        }
+
+        // LOGIKA JUARA & RANGKUMAN WAKTU STRUK
         function getSessionChampions(session) {
             let playersWithDur = session.players.map(p => {
-                let dur = 0;
-                (p.timeLogs || []).forEach(l => { dur += calculateDurationMin(l.start, l.end); });
+                let dur = 0; (p.timeLogs || []).forEach(l => { dur += calculateDurationMin(l.start, l.end); });
                 return { ...p, calcDuration: dur };
             });
             let maxTrophy = 0; 
             playersWithDur.forEach(p => { if ((p.trophies || 0) > maxTrophy) maxTrophy = p.trophies || 0; });
-            
             if (maxTrophy <= 0) return { maxTrophy: 0, champNames: [] };
             
             let candidates = playersWithDur.filter(p => (p.trophies || 0) === maxTrophy);
@@ -313,7 +307,6 @@
             return { maxTrophy, champNames: champs };
         }
 
-        // NEW LOGIC: Fungsi Dapatkan Teks Rentang Waktu Pemain
         function getPlayerTimeSummary(player) {
             let earliest = Infinity; let latest = 0; let dur = 0;
             (player.timeLogs || []).forEach(l => {
@@ -323,9 +316,7 @@
                 dur += calculateDurationMin(l.start, l.end);
             });
             let timeStr = "";
-            if (earliest !== Infinity && latest !== 0) {
-                timeStr = `${formatTimeInput(earliest)} - ${formatTimeInput(latest)} • `;
-            }
+            if (earliest !== Infinity && latest !== 0) timeStr = `${formatTimeInput(earliest)} - ${formatTimeInput(latest)} • `;
             return { timeStr, dur };
         }
 
@@ -335,23 +326,17 @@
             
             snapshot.forEach(docSnap => {
                 const data = docSnap.data();
-                if (data.isActive && docSnap.id === 'current_active') {
-                    activeSession = { id: docSnap.id, ...data };
-                } else if (!data.isActive && docSnap.id !== 'current_active' && data.players) {
-                    historySessions.push({ id: docSnap.id, ...data });
-                }
+                if (data.isActive && docSnap.id === 'current_active') activeSession = { id: docSnap.id, ...data };
+                else if (!data.isActive && docSnap.id !== 'current_active' && data.players) historySessions.push({ id: docSnap.id, ...data });
             });
-
             historySessions.sort((a, b) => {
-                const dateA = new Date(a.sessionDate || 0).getTime();
-                const dateB = new Date(b.sessionDate || 0).getTime();
+                const dateA = new Date(a.sessionDate || 0).getTime(); const dateB = new Date(b.sessionDate || 0).getTime();
                 if (dateA !== dateB) return dateB - dateA; 
                 return String(b.id).localeCompare(String(a.id));
             });
             renderMainActiveSession(); renderHistoryTab(); computeAndRenderLeaderboard();
         });
-
-        window.startNewSession = async () => {
+                    window.startNewSession = async () => {
             try {
                 const now = new Date();
                 const sessionDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -361,11 +346,10 @@
         };
 
         window.openAddPlayerModal = (sessionId = 'current_active') => {
-            currentAddPlayerSessionId = String(sessionId); selectedNewPlayers = [];
+            currentAddPlayerSessionId = String(sessionId).trim(); selectedNewPlayers = [];
             document.getElementById('default-players-grid').innerHTML = defaultPlayerNames.map(name => `<button onclick="togglePlayerChip(this, '${name}')" class="border border-slate-600 text-slate-300 px-3 py-1.5 rounded-full text-sm font-semibold transition-all">${name}</button>`).join('');
             document.getElementById('new-player-extra').value = '';
-            const now = new Date();
-            document.getElementById('add-player-time-input').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            const now = new Date(); document.getElementById('add-player-time-input').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             document.getElementById('modal-add-time').classList.remove('hidden');
         };
 
@@ -383,49 +367,57 @@
             if (extraName) namesToAdd.push(extraName);
             if (namesToAdd.length === 0) return showToast("Pilih minimal 1 pemain", "error");
 
-            const session = currentAddPlayerSessionId === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(currentAddPlayerSessionId));
+            const session = getSessionById(currentAddPlayerSessionId);
             if (!session) return;
+            
             let existingNames = session.players.map(p => p.name.toLowerCase());
             let finalNames = namesToAdd.filter(n => !existingNames.includes(n.toLowerCase()));
             if (finalNames.length === 0) { closeAddPlayerModal(); return showToast("Pemain sudah ada", "error"); }
 
             const timeStr = document.getElementById('add-player-time-input').value;
             let startTime = Date.now();
-            const isHistory = currentAddPlayerSessionId !== 'current_active';
+            const isHistory = (activeSession && session.id === activeSession.id) ? false : true;
             
             if (timeStr) {
                 let dateObj = session.sessionDate ? new Date(session.sessionDate) : new Date();
-                let [hours, minutes] = timeStr.split(':');
-                dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
+                let [hours, minutes] = timeStr.split(':'); dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
                 startTime = dateObj.getTime();
             }
 
             const newPlayersData = finalNames.map(name => ({ id: 'p_' + Date.now() + Math.random().toString(36).substr(2, 5), name: name, timeLogs: [{ start: startTime, end: isHistory ? startTime : null }], trophies: 0, isActive: !isHistory }));
             try {
-                await updateDoc(doc(db, 'ps_sessions', currentAddPlayerSessionId), { players: [...session.players, ...newPlayersData] });
+                await updateDoc(doc(db, 'ps_sessions', session.id), { players: [...session.players, ...newPlayersData] });
                 closeAddPlayerModal(); showToast(`${finalNames.length} pemain ditambahkan!`, "success");
             } catch (error) { showToast("Gagal menambah", "error"); }
         };
-                window.removePlayer = async (sessionId, playerId) => {
+
+        // HAPUS PEMAIN (Sudah Anti Error)
+        window.removePlayer = async (sessionId, playerId) => {
             if(confirm("Yakin ingin menghapus pemain ini?")) {
                 try {
-                    const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
+                    const session = getSessionById(sessionId);
                     if (!session) return showToast("Sesi tidak ditemukan", "error");
-                    const updatedPlayers = session.players.filter(p => String(p.id) !== String(playerId));
-                    await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+                    const updatedPlayers = session.players.filter(p => String(p.id).trim() !== String(playerId).trim());
+                    await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
                     showToast("Pemain dihapus", "success");
                 } catch(err) { showToast("Gagal hapus pemain", "error"); }
             }
         };
 
+        // HAPUS SESI (Pengecekan Aman)
         window.deleteSession = async (sessionId, btnEl) => {
-            const cleanId = String(sessionId).trim();
-            if (cleanId === 'current_active') return showToast("Tidak bisa menghapus sesi aktif dari sini!", "error"); // GUARD LOGIC
+            const session = getSessionById(sessionId);
+            if (!session) return showToast("Sesi tidak ditemukan", "error");
             
+            // Jaga-jaga agar Sesi Aktif tidak terhapus dari menu Riwayat
+            if (activeSession && session.id === activeSession.id) {
+                return showToast("Gunakan 'Selesaikan Sesi' untuk sesi aktif!", "error"); 
+            }
+
             if(confirm("PERINGATAN: Yakin ingin MENGHAPUS PERMANEN sesi riwayat ini?")) {
                 try {
                     if(btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghapus...'; }
-                    await deleteDoc(doc(db, 'ps_sessions', cleanId));
+                    await deleteDoc(doc(db, 'ps_sessions', session.id));
                     showToast("Sesi dihapus permanen!", "success");
                 } catch (error) {
                     showToast("Gagal menghapus sesi.", "error");
@@ -436,15 +428,17 @@
 
         window.updateSessionDate = async (sessionId, newDateStr) => {
              if (!newDateStr) return;
-             try { await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { sessionDate: newDateStr, title: formatDateToTitle(newDateStr) }); showToast("Tanggal diperbarui", "success"); } catch (error) {}
+             try { 
+                 const session = getSessionById(sessionId); if(!session) return;
+                 await updateDoc(doc(db, 'ps_sessions', session.id), { sessionDate: newDateStr, title: formatDateToTitle(newDateStr) }); showToast("Tanggal diperbarui", "success"); 
+             } catch (error) {}
         };
 
         window.togglePlayStatus = async (sessionId, playerId, action) => {
             try {
-                 const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
-                 if (!session) return;
+                 const session = getSessionById(sessionId); if (!session) return;
                  const updatedPlayers = session.players.map(p => {
-                     if (p.id === playerId) {
+                     if (String(p.id).trim() === String(playerId).trim()) {
                          let logs = p.timeLogs || [];
                          if (action === 'stop') logs = logs.map(l => l.end === null ? { ...l, end: Date.now() } : l);
                          else if (action === 'start') logs.push({ start: Date.now(), end: null });
@@ -452,16 +446,15 @@
                      }
                      return p;
                  });
-                 await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+                 await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
             } catch(err) {}
         };
 
         window.updateTimeLog = async (sessionId, playerId, logIndex, field, timeString) => {
             try {
-                const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
-                if (!session) return;
+                const session = getSessionById(sessionId); if (!session) return;
                 const updatedPlayers = session.players.map(p => {
-                    if (p.id === playerId) {
+                    if (String(p.id).trim() === String(playerId).trim()) {
                         let logs = [...p.timeLogs]; let log = {...logs[logIndex]};
                         if (timeString) {
                             let baseTime = log[field] || log.start;
@@ -476,24 +469,23 @@
                     }
                     return p;
                 });
-                await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+                await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
             } catch(err) {}
         };
 
         window.updateTrophy = async (sessionId, playerId, delta) => {
             try {
-                const session = String(sessionId) === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(sessionId));
-                if (!session) return;
+                const session = getSessionById(sessionId); if (!session) return;
                 const updatedPlayers = session.players.map(p => {
-                     if (p.id === playerId) return { ...p, trophies: Math.max(0, (p.trophies || 0) + delta) };
+                     if (String(p.id).trim() === String(playerId).trim()) return { ...p, trophies: Math.max(0, (p.trophies || 0) + delta) };
                      return p;
                  });
-                await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { players: updatedPlayers });
+                await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
             } catch(err) {}
         };
 
         window.updateTotalSewa = async (sessionId, value) => {
-             try { await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { totalSewa: parseInt(value) || 0 }); } catch(err) {}
+             try { const session = getSessionById(sessionId); if (!session) return; await updateDoc(doc(db, 'ps_sessions', session.id), { totalSewa: parseInt(value) || 0 }); } catch(err) {}
         };
 
         window.stopAllTimers = async () => {
@@ -503,12 +495,11 @@
                     let logs = (p.timeLogs||[]).map(l => l.end === null ? { ...l, end: Date.now() } : l);
                     return { ...p, timeLogs: logs, isActive: false };
                 });
-                await updateDoc(doc(db, 'ps_sessions', 'current_active'), { players: updatedPlayers });
+                await updateDoc(doc(db, 'ps_sessions', activeSession.id), { players: updatedPlayers });
                 showToast("Semua timer dihentikan", "success");
             } catch(err) {}
         };
-
-        function renderMainActiveSession() {
+                    function renderMainActiveSession() {
             if (!activeSession) {
                 document.getElementById('sesi-start-container').classList.remove('hidden'); document.getElementById('sesi-start-container').classList.add('flex');
                 document.getElementById('sesi-active-container').classList.add('hidden');
@@ -716,11 +707,11 @@
         }
 
         window.closeModal = () => { document.getElementById('modal-result').classList.add('hidden'); };
-        window.showReviewModal = (sessionId) => { calculateAndShowModal(String(sessionId), false); };
+        window.showReviewModal = (sessionId) => { calculateAndShowModal(sessionId, false); };
         window.showFinalizeModal = () => { calculateAndShowModal('current_active', true); };
 
         function calculateAndShowModal(sessionId, isFinalizing) {
-            const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === sessionId);
+            const session = getSessionById(sessionId);
             if (!session || session.players.length === 0) return showToast("Tidak ada pemain", "error");
             
             let { champNames } = getSessionChampions(session);
