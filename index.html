@@ -86,8 +86,7 @@
     </header>
 
     <main class="flex-1 max-w-md w-full mx-auto p-4">
-        
-        <!-- ================= VIEW: SESI AKTIF ================= -->
+                <!-- ================= VIEW: SESI AKTIF ================= -->
         <div id="view-sesi" class="space-y-6 block">
             <div id="sesi-loading" class="text-center py-10 text-slate-400">
                 <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><p>Memuat sesi...</p>
@@ -160,9 +159,7 @@
         <!-- ================= VIEW: RIWAYAT ================= -->
         <div id="view-riwayat" class="hidden space-y-4">
             <h2 class="font-bold text-lg text-slate-300 text-center mb-4">Riwayat Sesi</h2>
-            <div id="riwayat-list" class="space-y-4">
-                <!-- Diisi oleh JS -->
-            </div>
+            <div id="riwayat-list" class="space-y-4"></div>
         </div>
 
         <!-- ================= VIEW: KLASEMEN ================= -->
@@ -194,31 +191,21 @@
     <div id="modal-add-time" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex flex-col justify-center items-center p-4">
         <div class="bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-700 p-6">
             <h2 class="text-xl font-bold text-center mb-4">Pilih Pemain</h2>
-            
             <div class="mb-5">
                 <label class="text-[11px] text-slate-400 mb-2 uppercase font-bold tracking-wider block">Bisa Pilih Lebih Dari Satu</label>
-                <div id="default-players-grid" class="flex flex-wrap gap-2">
-                    <!-- Populated by JS -->
-                </div>
+                <div id="default-players-grid" class="flex flex-wrap gap-2"></div>
             </div>
-
             <div class="mb-5">
                 <label class="text-[11px] text-slate-400 mb-2 uppercase font-bold tracking-wider block">Atau Ketik Nama Baru</label>
                 <input type="text" id="new-player-extra" placeholder="Nama..." class="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none">
             </div>
-            
             <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 mb-6 flex flex-col items-center">
                 <label class="text-[11px] text-slate-400 mb-2 uppercase font-bold tracking-wider">Atur Jam Mulai (Semua Sama)</label>
                 <input type="time" id="add-player-time-input" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-xl text-white focus:border-orange-500 outline-none text-center w-full">
             </div>
-
             <div class="space-y-3">
-                <button onclick="confirmAddPlayer()" class="w-full py-3 rounded-xl font-bold gaming-gradient text-white shadow-lg shadow-orange-500/30">
-                    <i class="fa-solid fa-check mr-1"></i> Mulai Main
-                </button>
-                <button onclick="closeAddPlayerModal()" class="w-full py-3 rounded-xl font-semibold bg-slate-700 hover:bg-slate-600 text-white transition-colors">
-                    Batal
-                </button>
+                <button onclick="confirmAddPlayer()" class="w-full py-3 rounded-xl font-bold gaming-gradient text-white shadow-lg shadow-orange-500/30"><i class="fa-solid fa-check mr-1"></i> Mulai Main</button>
+                <button onclick="closeAddPlayerModal()" class="w-full py-3 rounded-xl font-semibold bg-slate-700 hover:bg-slate-600 text-white transition-colors">Batal</button>
             </div>
         </div>
     </div>
@@ -229,25 +216,18 @@
             <div class="p-6">
                 <h2 class="text-2xl font-bold text-center mb-1" id="modal-receipt-title">Struk Patungan</h2>
                 <p class="text-center text-slate-400 text-sm mb-6" id="modal-date-info">Sesi Hari Ini</p>
-
-                <div class="space-y-4 max-h-[50vh] overflow-y-auto hide-scrollbar mb-6" id="receipt-list">
-                    <!-- Populated by JS -->
-                </div>
-
+                <div class="space-y-4 max-h-[50vh] overflow-y-auto hide-scrollbar mb-6" id="receipt-list"></div>
                 <div class="border-t border-slate-700 pt-4 mb-6">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-slate-400 text-sm">Total Waktu Main Sesi</span>
                         <span class="font-bold text-slate-200" id="receipt-total-time">0j 0m</span>
                     </div>
                     <div class="flex justify-between items-center text-lg mt-2 pt-2 border-t border-slate-700/50">
-                        <span class="text-slate-300 font-medium">Total Tagihan</span>
+                        <span class="text-slate-300 font-medium" id="receipt-total-label">Total Tagihan</span>
                         <span class="font-bold text-orange-400" id="receipt-total-collected">Rp 0</span>
                     </div>
                 </div>
-
-                <div class="flex gap-3" id="receipt-buttons">
-                    <!-- Diisi dinamis oleh JS -->
-                </div>
+                <div class="flex gap-3" id="receipt-buttons"></div>
             </div>
         </div>
     </div>
@@ -257,8 +237,7 @@
         <i id="toast-icon" class="fa-solid fa-info-circle text-orange-400"></i>
         <span id="toast-msg" class="text-sm font-medium">Message</span>
     </div>
-
-    <script type="module">
+        <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -283,7 +262,6 @@
         let selectedNewPlayers = [];
         let currentAddPlayerSessionId = null;
 
-        // UI Tabs
         window.switchTab = (tab) => {
             ['sesi', 'riwayat', 'klasemen'].forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
@@ -297,16 +275,13 @@
             activeBtn.classList.remove('text-slate-400', 'border-transparent');
         };
 
-        // Utility Formats
         const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number || 0);
-        
         const formatTimeInput = (timestamp) => {
             if (!timestamp) return '';
             const d = new Date(timestamp);
             return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
         };
 
-        // BUGFIX: Cek waktu negatif agar tidak memotong perhitungan
         const calculateDurationMin = (start, end) => {
             if (!start) return 0;
             const diff = Math.floor(((end || Date.now()) - start) / 60000);
@@ -338,7 +313,6 @@
             setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3000);
         };
 
-        // DB Listener
         onSnapshot(collection(db, 'ps_sessions'), (snapshot) => {
             document.getElementById('sesi-loading').classList.add('hidden');
             allSessions = [];
@@ -354,7 +328,6 @@
                 }
             });
 
-            // Urutkan Riwayat dari Tanggal Terbaru
             historySessions.sort((a, b) => {
                 const dateA = new Date(a.sessionDate || 0).getTime();
                 const dateB = new Date(b.sessionDate || 0).getTime();
@@ -367,41 +340,25 @@
             computeAndRenderLeaderboard();
         });
 
-        // ---------------- Sesi Aktif Logic ----------------
         window.startNewSession = async () => {
             try {
                 const now = new Date();
                 const sessionDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                 const dateTitle = formatDateToTitle(sessionDate);
-
-                await setDoc(doc(db, 'ps_sessions', 'current_active'), {
-                    isActive: true, 
-                    title: dateTitle, 
-                    sessionDate: sessionDate, 
-                    totalSewa: 0, 
-                    players: []
-                });
+                await setDoc(doc(db, 'ps_sessions', 'current_active'), { isActive: true, title: dateTitle, sessionDate: sessionDate, totalSewa: 0, players: [] });
                 showToast("Sesi baru dimulai!", "success");
             } catch (error) { showToast("Gagal memulai sesi", "error"); }
         };
 
-        // ---------------- Logika Tambah Pemain ----------------
         window.openAddPlayerModal = (sessionId = 'current_active') => {
             currentAddPlayerSessionId = String(sessionId);
             selectedNewPlayers = [];
-            
-            const grid = document.getElementById('default-players-grid');
-            grid.innerHTML = defaultPlayerNames.map(name => `
-                <button onclick="togglePlayerChip(this, '${name}')" class="border border-slate-600 text-slate-300 px-3 py-1.5 rounded-full text-sm font-semibold transition-all">
-                    ${name}
-                </button>
+            document.getElementById('default-players-grid').innerHTML = defaultPlayerNames.map(name => `
+                <button onclick="togglePlayerChip(this, '${name}')" class="border border-slate-600 text-slate-300 px-3 py-1.5 rounded-full text-sm font-semibold transition-all">${name}</button>
             `).join('');
-            
             document.getElementById('new-player-extra').value = '';
-            
             const now = new Date();
             document.getElementById('add-player-time-input').value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            
             document.getElementById('modal-add-time').classList.remove('hidden');
         };
 
@@ -424,7 +381,6 @@
             const extraName = document.getElementById('new-player-extra').value.trim();
             let namesToAdd = [...selectedNewPlayers];
             if (extraName) namesToAdd.push(extraName);
-
             if (namesToAdd.length === 0) return showToast("Pilih minimal 1 pemain", "error");
 
             const session = currentAddPlayerSessionId === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === String(currentAddPlayerSessionId));
@@ -432,7 +388,6 @@
 
             let existingNames = session.players.map(p => p.name.toLowerCase());
             let finalNames = namesToAdd.filter(n => !existingNames.includes(n.toLowerCase()));
-
             if (finalNames.length === 0) {
                 closeAddPlayerModal();
                 return showToast("Semua pemain yg dipilih sudah ada di sesi ini.", "error");
@@ -440,12 +395,9 @@
 
             const timeStr = document.getElementById('add-player-time-input').value;
             let startTime = Date.now();
-            
-            // BUGFIX: Cek apakah ini sesi riwayat. Jika ya, timer harus langsung berhenti saat ditambah.
             const isHistory = currentAddPlayerSessionId !== 'current_active';
             
             if (timeStr) {
-                // BUGFIX: Gunakan tanggal sesi saat menambah pemain di riwayat masa lalu, jangan gunakan hari ini.
                 let dateObj = session.sessionDate ? new Date(session.sessionDate) : new Date();
                 let [hours, minutes] = timeStr.split(':');
                 dateObj.setHours(parseInt(hours), parseInt(minutes), 0);
@@ -455,22 +407,18 @@
             const newPlayersData = finalNames.map(name => ({
                 id: 'p_' + Date.now() + Math.random().toString(36).substr(2, 5),
                 name: name,
-                // BUGFIX: Jika ditambah di riwayat, end time sama dengan start time (otomatis berhenti)
                 timeLogs: [{ start: startTime, end: isHistory ? startTime : null }],
                 trophies: 0,
                 isActive: !isHistory
             }));
 
             try {
-                await updateDoc(doc(db, 'ps_sessions', currentAddPlayerSessionId), { 
-                    players: [...session.players, ...newPlayersData] 
-                });
+                await updateDoc(doc(db, 'ps_sessions', currentAddPlayerSessionId), { players: [...session.players, ...newPlayersData] });
                 closeAddPlayerModal();
                 showToast(`${finalNames.length} pemain ditambahkan!`, "success");
             } catch (error) { showToast("Gagal menambah", "error"); }
         };
-
-        // ---------------- Generic CRUD / Actions ----------------
+                    // ---------------- Generic CRUD / Actions ----------------
         window.removePlayer = async (sessionId, playerId) => {
             if(confirm("Yakin ingin menghapus pemain ini dari sesi?")) {
                 try {
@@ -491,13 +439,10 @@
                         btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghapus...';
                         btnEl.classList.add('opacity-50', 'cursor-not-allowed');
                     }
-                    
                     const cleanId = String(sessionId).trim();
-                    const docRef = doc(db, 'ps_sessions', cleanId);
-                    await deleteDoc(docRef);
+                    await deleteDoc(doc(db, 'ps_sessions', cleanId));
                     showToast("Sesi berhasil dihapus secara permanen!", "success");
                 } catch (error) {
-                    console.error("Gagal menghapus sesi: ", error);
                     showToast("Gagal menghapus sesi dari database.", "error");
                     if(btnEl) {
                         btnEl.disabled = false;
@@ -512,10 +457,7 @@
              if (!newDateStr) return;
              try {
                  const title = formatDateToTitle(newDateStr); 
-                 await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { 
-                     sessionDate: newDateStr, 
-                     title: title 
-                 });
+                 await updateDoc(doc(db, 'ps_sessions', String(sessionId)), { sessionDate: newDateStr, title: title });
                  showToast("Tanggal sesi diperbarui", "success");
              } catch (error) { showToast("Gagal mengubah tanggal", "error"); }
         };
@@ -552,7 +494,6 @@
                         let log = {...logs[logIndex]};
                         
                         if (timeString) {
-                            // BUGFIX: Mencegah update end time dari form kosong menggunakan tanggal 'hari ini' untuk sesi masa lalu
                             let baseTime = log[field] || log.start;
                             if (!baseTime && session.sessionDate) {
                                 baseTime = new Date(session.sessionDate).getTime();
@@ -623,7 +564,6 @@
             
             document.getElementById('active-session-date').value = activeSession.sessionDate || '';
             document.getElementById('active-session-title-text').innerText = activeSession.title || 'Sesi Hari Ini';
-            
             document.getElementById('total-sewa').value = activeSession.totalSewa || '';
             document.getElementById('player-list-current_active').innerHTML = generatePlayerListHTML(activeSession, true);
             
@@ -686,13 +626,10 @@
                 </div>`;
             });
             return html;
-        }
-
-        // ================= RENDER RIWAYAT =================
+                    }
+                    // ================= RENDER RIWAYAT =================
         function renderHistoryTab() {
             const listEl = document.getElementById('riwayat-list');
-
-            // BUGFIX: Memori UI harus mendeteksi apakah suatu kartu sedang dalam 'Edit Mode'
             const openCards = [];
             const editCards = [];
             
@@ -700,7 +637,6 @@
                 const detailNode = card.querySelector('.riwayat-detail');
                 if (detailNode && !detailNode.classList.contains('hidden')) {
                     openCards.push(card.dataset.sessionId);
-                    
                     const editNode = card.querySelector('.hist-edit');
                     if (editNode && !editNode.classList.contains('hidden')) {
                         editCards.push(card.dataset.sessionId);
@@ -714,7 +650,6 @@
             }
             
             let html = '';
-            
             historySessions.forEach(session => {
                 let maxTrophy = 0;
                 session.players.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
@@ -763,8 +698,6 @@
 
                 html += `
                 <div class="bg-slate-800/90 rounded-2xl border border-slate-700 overflow-hidden shadow-lg backdrop-blur-sm riwayat-card mb-4" data-session-id="${session.id}">
-                    
-                    <!-- KEPALA KARTU RIWAYAT YG BISA DI KLIK -->
                     <div class="p-4 bg-slate-900/50 cursor-pointer hover:bg-slate-800 transition" onclick="this.nextElementSibling.classList.toggle('hidden')">
                         <div class="flex justify-between items-start">
                             <div>
@@ -776,18 +709,11 @@
                         </div>
                     </div>
                     
-                    <!-- ISI DETAIL KARTU -->
                     <div class="hidden riwayat-detail">
-                        
-                        <!-- STRUK VIEW -->
                         <div class="hist-struk p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="mb-4">
                                 <h4 class="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider text-center">Struk Sesi & Pembayaran</h4>
-                                
-                                <div class="space-y-2">
-                                    ${strukHtml}
-                                </div>
-
+                                <div class="space-y-2">${strukHtml}</div>
                                 <div class="flex justify-between items-center text-xs mt-3 pt-3 border-t border-slate-700">
                                     <span class="text-slate-400">Total Waktu: ${formatDuration(overallMins)}</span>
                                     <span class="font-bold text-orange-400">Total: ${formatRupiah(totalBillSum)}</span>
@@ -799,12 +725,10 @@
                                     container.querySelector('.hist-struk').classList.add('hidden');
                                     container.querySelector('.hist-edit').classList.remove('hidden');
                                 " class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
-                                
                                 <button onclick="deleteSession('${session.id}', this)" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2 whitespace-nowrap"><i class="fa-solid fa-trash"></i> Hapus Sesi</button>
                             </div>
                         </div>
 
-                        <!-- EDIT VIEW -->
                         <div class="hist-edit hidden p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="font-bold text-slate-300 text-sm"><i class="fa-solid fa-pen-to-square text-orange-400 mr-1"></i> Mode Edit</h4>
@@ -814,7 +738,6 @@
                                     container.querySelector('.hist-struk').classList.remove('hidden');
                                 " class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition">Selesai Edit</button>
                             </div>
-                            
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700">
                                 <div>
                                     <label class="block text-[10px] text-slate-400 mb-1 uppercase font-bold tracking-wider">Ubah Tanggal</label>
@@ -833,11 +756,9 @@
                                     </div>
                                 </div>
                             </div>
-                            
                             <button onclick="openAddPlayerModal('${session.id}')" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-300 font-bold py-2.5 rounded-xl transition-colors text-sm mb-3 shadow-md">
                                 <i class="fa-solid fa-user-plus mr-1"></i> Tambah Pemain Susulan
                             </button>
-
                             <div class="space-y-3 mb-2">
                                 ${generatePlayerListHTML(session, false)}
                             </div>
@@ -847,14 +768,11 @@
             });
             listEl.innerHTML = html;
 
-            // BUGFIX: Kembalikan memory UI, termasuk apakah sedang dalam mode edit atau tidak
             openCards.forEach(id => {
                 const card = document.querySelector(`.riwayat-card[data-session-id="${id}"]`);
                 if (card) {
                     const detailNode = card.querySelector('.riwayat-detail');
                     if (detailNode) detailNode.classList.remove('hidden');
-                    
-                    // Kembalikan ke layar form edit jika sebelumnya sedang mengedit
                     if (editCards.includes(id)) {
                         const strukNode = card.querySelector('.hist-struk');
                         const editNode = card.querySelector('.hist-edit');
@@ -870,7 +788,6 @@
             historySessions.forEach(session => {
                 let maxT = 0;
                 session.players.forEach(p => { if ((p.trophies||0) > maxT) maxT = p.trophies||0; });
-                
                 session.players.forEach(p => {
                     const name = p.name.trim();
                     if (!stats[name]) stats[name] = { name: name, trophies: 0, champs: 0 };
@@ -880,7 +797,6 @@
             });
 
             const sorted = Object.values(stats).sort((a,b) => b.champs !== a.champs ? b.champs - a.champs : b.trophies - a.trophies);
-            
             const listEl = document.getElementById('klasemen-list');
             if (sorted.length === 0) {
                 listEl.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-500">Belum ada data dari riwayat sesi.</td></tr>`;
@@ -902,20 +818,15 @@
             listEl.innerHTML = html;
         }
 
-        // ---------------- Modal Review & Simpan Sesi Aktif ----------------
         window.closeModal = () => { document.getElementById('modal-result').classList.add('hidden'); };
-
         window.showReviewModal = (sessionId) => { calculateAndShowModal(String(sessionId), false); };
         window.showFinalizeModal = () => { calculateAndShowModal('current_active', true); };
 
         function calculateAndShowModal(sessionId, isFinalizing) {
             const session = sessionId === 'current_active' ? activeSession : historySessions.find(s => String(s.id) === sessionId);
             if (!session || session.players.length === 0) return showToast("Tidak ada pemain", "error");
-
-            const totalSewa = session.totalSewa || 0;
             
             let globalMin = Infinity, globalMax = 0, totalIndividualMins = 0; 
-            
             const tempPlayers = session.players.map(p => {
                 let pDuration = 0;
                 (p.timeLogs||[]).forEach(l => {
@@ -931,6 +842,10 @@
             let overallSessionDuration = 0;
             if (globalMax > globalMin) overallSessionDuration = Math.floor((globalMax - globalMin) / 60000);
 
+            const tarifPerJam = 8000;
+            const estimasiTotalSewa = (overallSessionDuration / 60) * tarifPerJam;
+            const efektifTotalSewa = isFinalizing ? (session.totalSewa || 0) : estimasiTotalSewa;
+
             let maxTrophy = -1;
             tempPlayers.forEach(p => { if ((p.trophies||0) > maxTrophy) maxTrophy = (p.trophies||0); });
 
@@ -938,10 +853,9 @@
             let receiptHtml = '';
             
             tempPlayers.forEach(p => {
-                let shareSewa = totalIndividualMins > 0 ? (p.calcDuration / totalIndividualMins) * totalSewa : 0;
+                let shareSewa = totalIndividualMins > 0 ? (p.calcDuration / totalIndividualMins) * efektifTotalSewa : 0;
                 let totalBayar = Math.round(shareSewa);
                 totalBillSum += totalBayar;
-                
                 const isChamp = maxTrophy > 0 && (p.trophies||0) === maxTrophy;
                 receiptHtml += `
                 <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 flex justify-between items-center">
@@ -960,7 +874,8 @@
             document.getElementById('receipt-total-time').innerText = formatDuration(overallSessionDuration);
             document.getElementById('receipt-total-collected').innerText = formatRupiah(totalBillSum);
             document.getElementById('modal-receipt-title').innerText = isFinalizing ? "Hitung Final" : "Struk Sementara";
-            document.getElementById('modal-date-info').innerText = session.title;
+            document.getElementById('modal-date-info').innerText = isFinalizing ? session.title : `${session.title} (Estimasi 8k/jam)`;
+            document.getElementById('receipt-total-label').innerText = isFinalizing ? "Total Tagihan Final" : "Estimasi Tagihan Sesi";
 
             let btns = `<button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-semibold bg-slate-700 hover:bg-slate-600 transition-colors">Tutup</button>`;
             if (isFinalizing) {
@@ -978,13 +893,7 @@
                     return { ...p, timeLogs: logs, isActive: false };
                 });
                 
-                const finalData = {
-                    ...activeSession,
-                    players: updatedPlayers,
-                    isActive: false, 
-                    endTime: Date.now() 
-                };
-
+                const finalData = { ...activeSession, players: updatedPlayers, isActive: false, endTime: Date.now() };
                 const uniqueId = `session_${Date.now()}`;
                 await setDoc(doc(db, 'ps_sessions', uniqueId), finalData);
                 await deleteDoc(doc(db, 'ps_sessions', 'current_active'));
