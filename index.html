@@ -173,6 +173,21 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- KETERANGAN KLASEMEN -->
+                <div class="bg-slate-900/70 p-4 border-t border-slate-700 text-[11px] text-slate-400 space-y-2 leading-relaxed">
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-crown text-yellow-500 mt-0.5 w-4 text-center"></i> 
+                        <span><strong>Juara Harian:</strong> Diperoleh pemain dengan Trofi Terbanyak & Waktu Main Tersingkat dalam 1 sesi.</span>
+                    </p>
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-trophy text-slate-300 mt-0.5 w-4 text-center"></i> 
+                        <span><strong>Total Trofi:</strong> Akumulasi seluruh poin trofi yang dikumpulkan dari semua sesi permainan.</span>
+                    </p>
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-chart-line text-blue-400 mt-0.5 w-4 text-center"></i> 
+                        <span><strong>Win Rate (%):</strong> Efektivitas pemain meraih gelar Juara dari seberapa sering dia ikut main (Juara / Total Ikut Sesi x 100).</span>
+                    </p>
+                </div>
             </div>
         </div>
     </main>
@@ -692,22 +707,38 @@
                 });
             });
             
-            const sorted = Object.values(stats).sort((a,b) => b.champs !== a.champs ? b.champs - a.champs : b.trophies - a.trophies);
+            let sorted = Object.values(stats);
             const listEl = document.getElementById('klasemen-list');
             if (sorted.length === 0) { listEl.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-500">Belum ada data dari riwayat sesi.</td></tr>`; return; }
+
+            // Cari nilai maksimum masing-masing kolom untuk HIGHLIGHT
+            let maxChamps = 0, maxTrophies = 0, maxWinRate = 0;
+            sorted.forEach(p => {
+                p.winRate = p.played > 0 ? Math.round((p.champs / p.played) * 100) : 0;
+                if (p.champs > maxChamps) maxChamps = p.champs;
+                if (p.trophies > maxTrophies) maxTrophies = p.trophies;
+                if (p.winRate > maxWinRate) maxWinRate = p.winRate;
+            });
+
+            // Urutkan berdasarkan juara terbanyak lalu trofi terbanyak
+            sorted.sort((a,b) => b.champs !== a.champs ? b.champs - a.champs : b.trophies - a.trophies);
 
             let html = '';
             sorted.forEach((p, index) => {
                 let rankStyle = index === 0 ? 'text-yellow-400 font-bold' : (index===1 ? 'text-slate-300 font-bold' : (index===2 ? 'text-amber-600 font-bold' : 'text-slate-400'));
                 let rowBg = index === 0 ? 'bg-yellow-500/5' : '';
-                let winRate = p.played > 0 ? Math.round((p.champs / p.played) * 100) : 0;
                 
+                // Cek highlight
+                let champClass = (p.champs === maxChamps && maxChamps > 0) ? 'bg-yellow-500/20 text-yellow-300 font-black px-2 py-1 rounded-lg drop-shadow-md' : 'text-yellow-500 font-bold';
+                let trophyClass = (p.trophies === maxTrophies && maxTrophies > 0) ? 'bg-slate-500/30 text-white font-black px-2 py-1 rounded-lg drop-shadow-md' : 'text-slate-300';
+                let winRateClass = (p.winRate === maxWinRate && maxWinRate > 0) ? 'bg-blue-500/20 text-blue-200 font-black px-2 py-1 rounded-lg drop-shadow-md' : 'text-blue-400 font-medium';
+
                 html += `<tr class="${rowBg} hover:bg-slate-700/30 transition-colors">
                     <td class="p-3 pl-4 text-center ${rankStyle}">${index + 1}</td>
                     <td class="p-3 font-semibold">${p.name}</td>
-                    <td class="p-3 text-center text-yellow-500 font-bold">${p.champs}</td>
-                    <td class="p-3 text-center text-slate-300">${p.trophies}</td>
-                    <td class="p-3 text-center text-blue-400 font-medium">${winRate}%</td>
+                    <td class="p-3 text-center"><span class="${champClass}">${p.champs}</span></td>
+                    <td class="p-3 text-center"><span class="${trophyClass}">${p.trophies}</span></td>
+                    <td class="p-3 text-center"><span class="${winRateClass}">${p.winRate}%</span></td>
                 </tr>`;
             });
             listEl.innerHTML = html;
