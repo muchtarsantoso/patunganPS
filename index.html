@@ -177,15 +177,15 @@
                 <div class="bg-slate-900/70 p-4 border-t border-slate-700 text-[11px] text-slate-400 space-y-2 leading-relaxed">
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-crown text-yellow-500 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Juara Harian:</strong> Diperoleh pemain yang menjadi juara harian terbanyak.</span>
+                        <span><strong>Juara Harian:</strong> Diperoleh pemain dengan Trofi Terbanyak & Waktu Main Tersingkat dalam 1 sesi.</span>
                     </p>
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-trophy text-slate-300 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Total Trofi:</strong> Akumulasi seluruh trofi yang dikumpulkan dari semua sesi permainan.</span>
+                        <span><strong>Total Trofi:</strong> Akumulasi seluruh poin trofi yang dikumpulkan dari semua sesi permainan.</span>
                     </p>
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-chart-line text-blue-400 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Win Rate (%):</strong> Efektivitas pemain meraih gelar Juara harian dari seberapa sering dia ikut main.</span>
+                        <span><strong>Win Rate (%):</strong> Efektivitas pemain meraih gelar Juara dari seberapa sering dia ikut main (Juara / Total Ikut Sesi x 100).</span>
                     </p>
                 </div>
             </div>
@@ -349,6 +349,45 @@
                 if (dateA !== dateB) return dateB - dateA; 
                 return String(b.id).localeCompare(String(a.id));
             });
+
+            // ====== SKRIP AUTO-FIX UNTUK TANGGAL 5 NOV 2026 ======
+            historySessions.forEach(async (s) => {
+                // Cari sesi tanggal 5 November
+                if (s.title && s.title.includes("5 Nov 2026") || s.sessionDate === "2026-11-05") {
+                    let jun = s.players.find(p => p.name === 'Jun');
+                    // Ambil waktu persis milik Jun
+                    if (jun && jun.timeLogs && jun.timeLogs.length > 0) {
+                        let targetStart = jun.timeLogs[0].start;
+                        let targetEnd = jun.timeLogs[0].end;
+                        let needsUpdate = false;
+                        
+                        s.players.forEach(p => {
+                            if (p.name === 'Rendy' || p.name === 'Ekky') {
+                                if (p.timeLogs && p.timeLogs.length > 0) {
+                                    // Jika waktu Ekky/Rendy berbeda 1 detik/menit pun dari Jun, paksa sama
+                                    if (p.timeLogs[0].start !== targetStart || p.timeLogs[0].end !== targetEnd) {
+                                        p.timeLogs[0].start = targetStart;
+                                        p.timeLogs[0].end = targetEnd;
+                                        needsUpdate = true;
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Jika ada perubahan, langsung simpan secara otomatis ke database
+                        if (needsUpdate) {
+                            try {
+                                await updateDoc(doc(db, 'ps_sessions', s.id), { players: s.players });
+                                console.log("Auto-fix berhasil: Waktu main Rendy dan Ekky disamakan dengan Jun.");
+                            } catch (err) {
+                                console.error("Gagal menjalankan Auto-fix:", err);
+                            }
+                        }
+                    }
+                }
+            });
+            // ======================================================
+
             renderMainActiveSession(); renderHistoryTab(); computeAndRenderLeaderboard();
         });
 
@@ -358,7 +397,7 @@
                 const sessionDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                 await setDoc(doc(db, 'ps_sessions', 'current_active'), { isActive: true, title: formatDateToTitle(sessionDate), sessionDate: sessionDate, totalSewa: 0, players: [] });
                 showToast("Sesi baru dimulai!", "success");
-            } catch (error) { showToast("Gagal memulai sesi", "error"); }
+            } catch (error) { showToast("Gagal memulai sesi: " + (error.message || ""), "error"); }
         };
 
         window.openAddPlayerModal = (sessionId = 'current_active') => {
@@ -404,7 +443,7 @@
             try {
                 await updateDoc(doc(db, 'ps_sessions', session.id), { players: [...session.players, ...newPlayersData] });
                 closeAddPlayerModal(); showToast(`${finalNames.length} pemain ditambahkan!`, "success");
-            } catch (error) { showToast("Gagal menambah", "error"); }
+            } catch (error) { showToast("Gagal menambah: " + (error.message || ""), "error"); }
         };
 
         window.removePlayer = async (sessionId, playerId) => {
@@ -415,7 +454,7 @@
                     const updatedPlayers = session.players.filter(p => String(p.id).trim() !== String(playerId).trim());
                     await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
                     showToast("Pemain dihapus", "success");
-                } catch(err) { showToast("Gagal hapus pemain", "error"); }
+                } catch(err) { showToast("Gagal hapus pemain: " + (err.message || ""), "error"); }
             }
         };
 
@@ -431,7 +470,7 @@
                     await deleteDoc(doc(db, 'ps_sessions', session.id));
                     showToast("Sesi dihapus permanen!", "success");
                 } catch (error) {
-                    showToast("Gagal menghapus sesi.", "error");
+                    showToast("Gagal hapus sesi: " + (error.message || "Pastikan ada izin database"), "error");
                     if(btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fa-solid fa-trash"></i> Hapus Sesi'; }
                 }
             }
@@ -442,7 +481,7 @@
              try { 
                  const session = getSessionById(sessionId); if(!session) return;
                  await updateDoc(doc(db, 'ps_sessions', session.id), { sessionDate: newDateStr, title: formatDateToTitle(newDateStr) }); showToast("Tanggal diperbarui", "success"); 
-             } catch (error) {}
+             } catch (error) { showToast("Gagal update tanggal: " + (error.message || ""), "error"); }
         };
 
         window.togglePlayStatus = async (sessionId, playerId, action) => {
@@ -481,7 +520,7 @@
                     return p;
                 });
                 await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
-            } catch(err) {}
+            } catch(err) { showToast("Gagal update waktu: " + (err.message || ""), "error"); }
         };
 
         window.updateTrophy = async (sessionId, playerId, delta) => {
@@ -492,7 +531,7 @@
                      return p;
                  });
                 await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
-            } catch(err) {}
+            } catch(err) { showToast("Gagal update trofi: " + (err.message || ""), "error"); }
         };
 
         window.updateTotalSewa = async (sessionId, value) => {
@@ -508,7 +547,7 @@
                 });
                 await updateDoc(doc(db, 'ps_sessions', activeSession.id), { players: updatedPlayers });
                 showToast("Semua timer dihentikan", "success");
-            } catch(err) {}
+            } catch(err) { showToast("Gagal stop timer: " + (err.message || ""), "error"); }
         };
 
         function renderMainActiveSession() {
@@ -811,7 +850,7 @@
                 await setDoc(doc(db, 'ps_sessions', uniqueId), finalData);
                 await deleteDoc(doc(db, 'ps_sessions', 'current_active'));
                 closeModal(); showToast("Sesi disimpan ke riwayat!", "success");
-            } catch (error) { showToast("Gagal menyimpan sesi final", "error"); }
+            } catch (error) { showToast("Gagal menyimpan sesi final: " + (error.message || ""), "error"); }
         };
     </script>
 </body>
