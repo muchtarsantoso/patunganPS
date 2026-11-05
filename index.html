@@ -512,18 +512,74 @@
             }
         };
 
-        // Pengaman agar satu sesi tidak dikirim untuk dihapus berkali-kali.
+        // Pengaman akses edit/hapus sesi riwayat. Password sisi-klien hanya mencegah klik sembarangan;
+        // ini bukan pengamanan kuat terhadap orang yang dapat membaca/mengubah kode atau Firestore.
         const deletingSessionIds = new Set();
+        const authorizedEditSessionIds = new Set();
+        let passwordResolve = null;
+
+        window.requestSessionPassword = () => new Promise(resolve => {
+            passwordResolve = resolve;
+            const modal = document.getElementById('session-password-modal');
+            const input = document.getElementById('session-password-input');
+            document.getElementById('session-password-error').classList.add('hidden');
+            input.value = '';
+            modal.classList.remove('hidden');
+            setTimeout(() => input.focus(), 50);
+        });
+
+        window.cancelSessionPassword = () => {
+            document.getElementById('session-password-modal').classList.add('hidden');
+            if (passwordResolve) passwordResolve(false);
+            passwordResolve = null;
+        };
+
+        window.submitSessionPassword = () => {
+            const input = document.getElementById('session-password-input');
+            if (input.value === '5') {
+                document.getElementById('session-password-modal').classList.add('hidden');
+                if (passwordResolve) passwordResolve(true);
+                passwordResolve = null;
+            } else {
+                document.getElementById('session-password-error').classList.remove('hidden');
+                input.value = ''; input.focus();
+            }
+        };
+
+        window.openHistoryEdit = async (sessionId, btnEl) => {
+            const id = String(sessionId || '').trim();
+            // Password hanya berlaku untuk tombol Edit di kartu Riwayat, bukan sesi aktif.
+            if (!id || id === 'current_active') return showToast('Fitur ini hanya untuk edit sesi riwayat.', 'error');
+            if (!(await requestSessionPassword())) return;
+            authorizedEditSessionIds.add(id);
+            const container = btnEl.closest('.riwayat-detail');
+            container.querySelector('.hist-struk').classList.add('hidden');
+            container.querySelector('.hist-edit').classList.remove('hidden');
+        };
+
+        window.closeHistoryEdit = (sessionId, btnEl) => {
+            authorizedEditSessionIds.delete(String(sessionId));
+            const container = btnEl.closest('.riwayat-detail');
+            container.querySelector('.hist-edit').classList.add('hidden');
+            container.querySelector('.hist-struk').classList.remove('hidden');
+        };
+
+        function hasHistoryEditAccess(sessionId) {
+            return String(sessionId) === 'current_active' || authorizedEditSessionIds.has(String(sessionId));
+        }
 
         window.deleteSession = async (sessionId, btnEl) => {
             const id = String(sessionId || '').trim();
             if (!id) return showToast("ID sesi tidak valid", "error");
 
-            // Hanya dokumen khusus current_active yang tidak boleh dihapus dari riwayat.
-            // ID sesi riwayat selalu memakai ID dokumen Firestore, bukan field id lama di dalam data.
+            // Penguncian password hanya untuk tombol Hapus pada Riwayat Sesi.
+            // Sesi aktif tidak disentuh oleh pengaman ini.
             if (id === 'current_active') {
-                return showToast("Sesi aktif tidak bisa dihapus di sini. Selesaikan sesi terlebih dahulu.", "error");
+                return showToast("Sesi aktif tidak bisa dihapus dari Riwayat Sesi.", "error");
             }
+            if (!(await requestSessionPassword())) return;
+
+            // ID sesi riwayat harus sama dengan ID dokumen Firestore.
             if (deletingSessionIds.has(id)) return;
 
             const session = getSessionById(id);
@@ -575,6 +631,7 @@
         };
 
         window.updateSessionDate = async (sessionId, newDateStr) => {
+             if (!hasHistoryEditAccess(sessionId)) return showToast("Masukkan password melalui tombol Edit Sesi terlebih dahulu", "error");
              if (!newDateStr) return;
              try { 
                  const session = getSessionById(sessionId); if(!session) return;
@@ -599,6 +656,7 @@
         };
 
         window.updateTimeLog = async (sessionId, playerId, logIndex, field, timeString) => {
+            if (!hasHistoryEditAccess(sessionId)) return showToast("Akses edit ditolak", "error");
             try {
                 const session = getSessionById(sessionId); if (!session) return;
                 const updatedPlayers = session.players.map(p => {
@@ -622,6 +680,7 @@
         };
 
         window.updateTrophy = async (sessionId, playerId, delta) => {
+            if (!hasHistoryEditAccess(sessionId)) return showToast("Akses edit ditolak", "error");
             try {
                 const session = getSessionById(sessionId); if (!session) return;
                 const updatedPlayers = session.players.map(p => {
@@ -633,6 +692,7 @@
         };
 
         window.updateTotalSewa = async (sessionId, value) => {
+             if (!hasHistoryEditAccess(sessionId)) return showToast("Masukkan password melalui tombol Edit Sesi terlebih dahulu", "error");
              try { const session = getSessionById(sessionId); if (!session) return; await updateDoc(doc(db, 'ps_sessions', session.id), { totalSewa: parseInt(value) || 0 }); } catch(err) {}
         };
 
@@ -788,7 +848,7 @@
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="const c = this.closest('.riwayat-detail'); c.querySelector('.hist-struk').classList.add('hidden'); c.querySelector('.hist-edit').classList.remove('hidden');" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
+                                <button onclick="openHistoryEdit('${session.id}', this)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-xl text-sm transition shadow-md"><i class="fa-solid fa-pen mr-1"></i> Edit Sesi</button>
                                 <button onclick="deleteSession('${session.id}', this)" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2 whitespace-nowrap"><i class="fa-solid fa-trash"></i> Hapus Sesi</button>
                             </div>
                         </div>
@@ -796,7 +856,7 @@
                         <div class="hist-edit hidden p-4 border-t border-slate-700 bg-slate-800/90">
                             <div class="flex justify-between items-center mb-4">
                                 <h4 class="font-bold text-slate-300 text-sm"><i class="fa-solid fa-pen-to-square text-orange-400 mr-1"></i> Mode Edit</h4>
-                                <button onclick="const c = this.closest('.riwayat-detail'); c.querySelector('.hist-edit').classList.add('hidden'); c.querySelector('.hist-struk').classList.remove('hidden');" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition">Selesai Edit</button>
+                                <button onclick="closeHistoryEdit('${session.id}', this)" class="text-xs bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition">Selesai Edit</button>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 bg-slate-900/60 p-3 rounded-xl border border-slate-700">
                                 <div>
@@ -960,5 +1020,30 @@
             } catch (error) { showToast("Gagal menyimpan sesi final", "error"); }
         };
     </script>
+
+    <!-- Modal keamanan untuk edit/hapus sesi riwayat -->
+    <div id="session-password-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="session-password-title">
+        <div class="w-full max-w-sm rounded-2xl border border-red-500/40 bg-slate-900 p-5 shadow-2xl">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-red-500/15 text-red-400 flex items-center justify-center"><i class="fa-solid fa-lock"></i></div>
+                <h2 id="session-password-title" class="text-lg font-extrabold text-white">Akses Dibatasi</h2>
+            </div>
+            <p class="text-sm font-bold text-red-300 leading-relaxed mb-4">ANDA TIDAK BISA EDIT/HAPUS, MINTA MUCHTAR UNTUK EDIT/HAPUS. DASAR KROCO!!!</p>
+            <label for="session-password-input" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Masukkan password</label>
+            <input id="session-password-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" class="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-center text-2xl font-extrabold tracking-[0.5em] text-white outline-none focus:border-orange-500" placeholder="•">
+            <p id="session-password-error" class="hidden text-xs text-red-400 mt-2">Password salah. Akses ditolak.</p>
+            <div class="flex gap-3 mt-5">
+                <button type="button" onclick="cancelSessionPassword()" class="flex-1 rounded-xl bg-slate-700 py-3 font-bold text-slate-200">Batal</button>
+                <button type="button" onclick="submitSessionPassword()" class="flex-1 rounded-xl bg-orange-600 py-3 font-bold text-white hover:bg-orange-500">Buka Akses</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('session-password-input')?.addEventListener('keydown', event => {
+            if (event.key === 'Enter') submitSessionPassword();
+            if (event.key === 'Escape') cancelSessionPassword();
+        });
+    </script>
+
 </body>
 </html>
