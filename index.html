@@ -297,8 +297,17 @@
         window.showToast = (msg, type='info') => {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
+            const icon = document.getElementById('toast-icon');
+            if (icon) {
+                icon.className = type === 'error'
+                    ? 'fa-solid fa-circle-exclamation text-red-400'
+                    : type === 'success'
+                        ? 'fa-solid fa-circle-check text-green-400'
+                        : 'fa-solid fa-info-circle text-orange-400';
+            }
             toast.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3000);
+            clearTimeout(window.__toastTimer);
+            window.__toastTimer = setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 4500);
         };
 
         function getSessionById(rawId) {
@@ -398,23 +407,42 @@
         };
         // ==============================================================
 
-        onSnapshot(collection(db, 'ps_sessions'), (snapshot) => {
-            document.getElementById('sesi-loading').classList.add('hidden');
-            allSessions = []; activeSession = null; historySessions = [];
-            
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data();
-                if (data.isActive && docSnap.id === 'current_active') activeSession = { id: docSnap.id, ...data };
-                else if (!data.isActive && docSnap.id !== 'current_active' && data.players) historySessions.push({ id: docSnap.id, ...data });
-            });
-            historySessions.sort((a, b) => {
-                const dateA = new Date(a.sessionDate || 0).getTime(); const dateB = new Date(b.sessionDate || 0).getTime();
-                if (dateA !== dateB) return dateB - dateA; 
-                return String(b.id).localeCompare(String(a.id));
-            });
+        onSnapshot(
+            collection(db, 'ps_sessions'),
+            (snapshot) => {
+                document.getElementById('sesi-loading').classList.add('hidden');
+                allSessions = [];
+                activeSession = null;
+                historySessions = [];
 
-            renderMainActiveSession(); renderHistoryTab(); computeAndRenderLeaderboard();
-        });
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const sessionData = { id: docSnap.id, ...data };
+
+                    if (data.isActive && docSnap.id === 'current_active') {
+                        activeSession = sessionData;
+                    } else if (!data.isActive && docSnap.id !== 'current_active' && Array.isArray(data.players)) {
+                        historySessions.push(sessionData);
+                    }
+                });
+
+                historySessions.sort((a, b) => {
+                    const dateA = new Date(a.sessionDate || 0).getTime();
+                    const dateB = new Date(b.sessionDate || 0).getTime();
+                    if (dateA !== dateB) return dateB - dateA;
+                    return String(b.id).localeCompare(String(a.id));
+                });
+
+                renderMainActiveSession();
+                renderHistoryTab();
+                computeAndRenderLeaderboard();
+            },
+            (error) => {
+                console.error("Gagal membaca koleksi sesi:", error);
+                document.getElementById('sesi-loading').classList.add('hidden');
+                showToast(`Gagal memuat data Firebase: ${error?.message || error?.code || 'kesalahan tidak diketahui'}`, "error");
+            }
+        );
 
         window.startNewSession = async () => {
             try {
@@ -483,21 +511,63 @@
             }
         };
 
+        // Pengaman agar satu sesi tidak dikirim untuk dihapus berkali-kali.
+        const deletingSessionIds = new Set();
+
         window.deleteSession = async (sessionId, btnEl) => {
-            const session = getSessionById(sessionId);
-            if (!session) return showToast("Sesi tidak ditemukan", "error");
-            if (activeSession && session.id === activeSession.id) {
-                return showToast("Gunakan 'Selesaikan Sesi' untuk sesi aktif!", "error"); 
+            const id = String(sessionId || '').trim();
+            if (!id) return showToast("ID sesi tidak valid", "error");
+
+            if (id === 'current_active' || (activeSession && id === String(activeSession.id))) {
+                return showToast("Sesi aktif tidak bisa dihapus di sini. Selesaikan sesi terlebih dahulu.", "error");
             }
-            if(confirm("PERINGATAN: Yakin ingin MENGHAPUS PERMANEN sesi riwayat ini?")) {
-                try {
-                    if(btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghapus...'; }
-                    await deleteDoc(doc(db, 'ps_sessions', session.id));
-                    showToast("Sesi dihapus permanen!", "success");
-                } catch (error) {
-                    showToast("Gagal hapus sesi", "error");
-                    if(btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fa-solid fa-trash"></i> Hapus Sesi'; }
+            if (deletingSessionIds.has(id)) return;
+
+            const session = getSessionById(id);
+            if (!session) return showToast("Data sesi tidak ditemukan. Muat ulang halaman lalu coba lagi.", "error");
+
+            if (!confirm(`PERINGATAN: Hapus permanen "${session.title || 'sesi ini'}"? Data pemain dan riwayat sesi ini juga akan terhapus.`)) return;
+
+            const originalButtonHtml = btnEl ? btnEl.innerHTML : '';
+            deletingSessionIds.add(id);
+
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.setAttribute('aria-busy', 'true');
+                btnEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghapus...';
+                btnEl.classList.add('opacity-70', 'cursor-wait');
+            }
+
+            try {
+                if (!navigator.onLine) throw new Error("Perangkat sedang offline. Periksa koneksi internet.");
+
+                // ID dokumen Firestore diambil dari ID sesi yang berasal dari snapshot.
+                const sessionRef = doc(db, 'ps_sessions', id);
+                let timeoutId;
+                const deleteRequest = deleteDoc(sessionRef);
+                const timeoutRequest = new Promise((_, reject) => {
+                    timeoutId = setTimeout(() => reject(new Error(
+                        "Server belum merespons setelah 15 detik. Periksa koneksi lalu muat ulang halaman sebelum mencoba lagi."
+                    )), 15000);
+                });
+
+                await Promise.race([deleteRequest, timeoutRequest]);
+                clearTimeout(timeoutId);
+                showToast("Sesi berhasil dihapus permanen!", "success");
+                // Kartu riwayat akan hilang otomatis setelah onSnapshot menerima perubahan.
+            } catch (error) {
+                console.error("Gagal menghapus sesi Firestore:", error);
+                const code = error?.code ? ` (${error.code})` : '';
+                showToast(`Gagal menghapus${code}: ${error?.message || 'kesalahan tidak diketahui'}`, "error");
+
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.removeAttribute('aria-busy');
+                    btnEl.innerHTML = originalButtonHtml || '<i class="fa-solid fa-trash"></i> Hapus Sesi';
+                    btnEl.classList.remove('opacity-70', 'cursor-wait');
                 }
+            } finally {
+                deletingSessionIds.delete(id);
             }
         };
 
