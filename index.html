@@ -335,6 +335,69 @@
             return { timeStr, dur };
         }
 
+        // ================= KODE RESTORE DATA OTOMATIS =================
+        window.restoreLostData = async () => {
+            document.getElementById('btn-restore').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Memulihkan...';
+            try {
+                // Sesi 5 Nov (Jun & Rendy Juara sama rata waktunya)
+                const t5 = new Date('2026-11-05T14:45:00').getTime();
+                const e5 = new Date('2026-11-05T17:56:00').getTime();
+                await setDoc(doc(db, 'ps_sessions', 'restore_5nov'), {
+                    isActive: false, sessionDate: '2026-11-05', title: 'Sesi Kamis, 5 Nov 2026', totalSewa: 0,
+                    players: [
+                        { id: 'p_1', name: 'Jun', trophies: 3, timeLogs: [{start: t5, end: e5}] },
+                        { id: 'p_2', name: 'Ekky', trophies: 0, timeLogs: [{start: t5, end: e5}] },
+                        { id: 'p_3', name: 'Rendy', trophies: 3, timeLogs: [{start: t5, end: e5}] }
+                    ]
+                });
+                
+                // Sesi 3 Nov (Juara Ekky, Rp 37.000)
+                const t3 = new Date('2026-11-03T13:00:00').getTime();
+                const e3 = new Date('2026-11-03T16:00:00').getTime();
+                await setDoc(doc(db, 'ps_sessions', 'restore_3nov'), {
+                    isActive: false, sessionDate: '2026-11-03', title: 'Sesi Selasa, 3 Nov 2026', totalSewa: 37000,
+                    players: [
+                        { id: 'p_4', name: 'Ekky', trophies: 4, timeLogs: [{start: t3, end: e3}] },
+                        { id: 'p_5', name: 'Widi', trophies: 2, timeLogs: [{start: t3, end: e3}] },
+                        { id: 'p_6', name: 'Muchtar', trophies: 1, timeLogs: [{start: t3, end: e3}] }
+                    ]
+                });
+
+                // Sesi 2 Nov (Juara Jun, Rp 92.001)
+                const t2 = new Date('2026-11-02T18:00:00').getTime();
+                const e2 = new Date('2026-11-02T22:00:00').getTime();
+                await setDoc(doc(db, 'ps_sessions', 'restore_2nov'), {
+                    isActive: false, sessionDate: '2026-11-02', title: 'Sesi Senin, 2 Nov 2026', totalSewa: 92001,
+                    players: [
+                        { id: 'p_7', name: 'Jun', trophies: 5, timeLogs: [{start: t2, end: e2}] },
+                        { id: 'p_8', name: 'Ramdan', trophies: 2, timeLogs: [{start: t2, end: e2}] },
+                        { id: 'p_9', name: 'Rendy', trophies: 1, timeLogs: [{start: t2, end: e2}] },
+                        { id: 'p_10', name: 'Ekky', trophies: 0, timeLogs: [{start: t2, end: e2}] },
+                        { id: 'p_11', name: 'Muchtar', trophies: 0, timeLogs: [{start: t2, end: e2}] }
+                    ]
+                });
+
+                // Sesi 31 Okt (Juara Ramdan, Rp 102.000)
+                const t31 = new Date('2026-10-31T20:00:00').getTime();
+                const e31 = new Date('2026-11-01T01:30:00').getTime();
+                await setDoc(doc(db, 'ps_sessions', 'restore_31okt'), {
+                    isActive: false, sessionDate: '2026-10-31', title: 'Sesi Sabtu, 31 Okt 2026', totalSewa: 102000,
+                    players: [
+                        { id: 'p_12', name: 'Ramdan', trophies: 6, timeLogs: [{start: t31, end: e31}] },
+                        { id: 'p_13', name: 'Rendy', trophies: 3, timeLogs: [{start: t31, end: e31}] },
+                        { id: 'p_14', name: 'Muchtar', trophies: 2, timeLogs: [{start: t31, end: e31}] },
+                        { id: 'p_15', name: 'Jun', trophies: 1, timeLogs: [{start: t31, end: e31}] }
+                    ]
+                });
+                
+                showToast("Data riwayat berhasil dipulihkan!", "success");
+            } catch(err) {
+                showToast("Gagal memulihkan: " + err.message, "error");
+                document.getElementById('btn-restore').innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Coba Pulihkan Lagi';
+            }
+        };
+        // ==============================================================
+
         onSnapshot(collection(db, 'ps_sessions'), (snapshot) => {
             document.getElementById('sesi-loading').classList.add('hidden');
             allSessions = []; activeSession = null; historySessions = [];
@@ -349,23 +412,6 @@
                 if (dateA !== dateB) return dateB - dateA; 
                 return String(b.id).localeCompare(String(a.id));
             });
-
-            // ====== SKRIP PENYAMAR OTOMATIS ======
-            // Mencari sesi yang salah dan menyembunyikannya dari UI
-            const semua5Nov = historySessions.filter(s => (s.title && s.title.includes("5 Nov 2026")) || s.sessionDate === "2026-11-05");
-            if (semua5Nov.length > 1) {
-                // Temukan id sesi yang juaranya cuma "Jun"
-                let sesiSalah = semua5Nov.find(s => {
-                    let champs = getSessionChampions(s).champNames;
-                    return champs.length === 1 && champs[0] === 'Jun';
-                });
-                
-                if (sesiSalah) {
-                    // Buang sesi tersebut dari data yang akan dirender ke HTML
-                    historySessions = historySessions.filter(s => s.id !== sesiSalah.id);
-                }
-            }
-            // =====================================
 
             renderMainActiveSession(); renderHistoryTab(); computeAndRenderLeaderboard();
         });
@@ -600,7 +646,17 @@
                 if (detailNode && !detailNode.classList.contains('hidden')) { openCards.push(card.dataset.sessionId); const editNode = card.querySelector('.hist-edit'); if (editNode && !editNode.classList.contains('hidden')) editCards.push(card.dataset.sessionId); }
             });
 
-            if (historySessions.length === 0) { listEl.innerHTML = `<div class="text-center py-10 text-slate-500">Belum ada riwayat sesi.</div>`; return; }
+            if (historySessions.length === 0) { 
+                listEl.innerHTML = `
+                <div class="text-center py-12 px-4 border border-dashed border-slate-700 rounded-2xl bg-slate-900/40">
+                    <i class="fa-solid fa-folder-open text-3xl text-slate-600 mb-3"></i>
+                    <p class="text-slate-400 text-sm mb-6">Belum ada riwayat sesi.</p>
+                    <button id="btn-restore" onclick="restoreLostData()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl text-sm transition-transform hover:scale-105 shadow-lg shadow-blue-500/20">
+                        <i class="fa-solid fa-clock-rotate-left mr-2"></i> Pulihkan Data Sebelumnya
+                    </button>
+                </div>`; 
+                return; 
+            }
             
             let html = '';
             historySessions.forEach(session => {
