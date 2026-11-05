@@ -177,15 +177,15 @@
                 <div class="bg-slate-900/70 p-4 border-t border-slate-700 text-[11px] text-slate-400 space-y-2 leading-relaxed">
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-crown text-yellow-500 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Juara Harian:</strong> Diperoleh pemain dengan Trofi Terbanyak & Waktu Main Tersingkat dalam 1 sesi.</span>
+                        <span><strong>Juara Harian:</strong> Diperoleh pemain yang menjadi juara harian terbanyak.</span>
                     </p>
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-trophy text-slate-300 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Total Trofi:</strong> Akumulasi seluruh poin trofi yang dikumpulkan dari semua sesi permainan.</span>
+                        <span><strong>Total Trofi:</strong> Akumulasi seluruh trofi yang dikumpulkan dari semua sesi permainan.</span>
                     </p>
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-chart-line text-blue-400 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Win Rate (%):</strong> Efektivitas pemain meraih gelar Juara dari seberapa sering dia ikut main (Juara / Total Ikut Sesi x 100).</span>
+                        <span><strong>Win Rate (%):</strong> Efektivitas pemain meraih gelar Juara harian dari seberapa sering dia ikut main.</span>
                     </p>
                 </div>
             </div>
@@ -350,43 +350,27 @@
                 return String(b.id).localeCompare(String(a.id));
             });
 
-            // ====== SKRIP AUTO-FIX UNTUK TANGGAL 5 NOV 2026 ======
-            historySessions.forEach(async (s) => {
-                // Cari sesi tanggal 5 November
-                if (s.title && s.title.includes("5 Nov 2026") || s.sessionDate === "2026-11-05") {
-                    let jun = s.players.find(p => p.name === 'Jun');
-                    // Ambil waktu persis milik Jun
-                    if (jun && jun.timeLogs && jun.timeLogs.length > 0) {
-                        let targetStart = jun.timeLogs[0].start;
-                        let targetEnd = jun.timeLogs[0].end;
-                        let needsUpdate = false;
-                        
-                        s.players.forEach(p => {
-                            if (p.name === 'Rendy' || p.name === 'Ekky') {
-                                if (p.timeLogs && p.timeLogs.length > 0) {
-                                    // Jika waktu Ekky/Rendy berbeda 1 detik/menit pun dari Jun, paksa sama
-                                    if (p.timeLogs[0].start !== targetStart || p.timeLogs[0].end !== targetEnd) {
-                                        p.timeLogs[0].start = targetStart;
-                                        p.timeLogs[0].end = targetEnd;
-                                        needsUpdate = true;
-                                    }
-                                }
-                            }
-                        });
-                        
-                        // Jika ada perubahan, langsung simpan secara otomatis ke database
-                        if (needsUpdate) {
-                            try {
-                                await updateDoc(doc(db, 'ps_sessions', s.id), { players: s.players });
-                                console.log("Auto-fix berhasil: Waktu main Rendy dan Ekky disamakan dengan Jun.");
-                            } catch (err) {
-                                console.error("Gagal menjalankan Auto-fix:", err);
-                            }
-                        }
+            // ====== SKRIP AUTO-FIX HAPUS DUPLIKAT TANGGAL 5 NOV ======
+            const sesi5Nov = historySessions.filter(s => (s.title && s.title.includes("5 Nov 2026")) || s.sessionDate === "2026-11-05");
+            
+            if (sesi5Nov.length > 1) {
+                // Simpan data pertama, siapkan array sisanya untuk dihapus
+                const sesiUntukDihapus = sesi5Nov.slice(1);
+                
+                sesiUntukDihapus.forEach(async (s) => {
+                    try {
+                        // Mencoba hapus duplikat dari database
+                        await deleteDoc(doc(db, 'ps_sessions', s.id));
+                    } catch (e) {
+                        console.log("Gagal hapus dari DB (mungkin terkendala permission rules Firebase):", e);
                     }
-                }
-            });
-            // ======================================================
+                });
+
+                // Filter dari array memori agar duplikat LANGSUNG HILANG dari tampilan UI
+                // meskipun hapus di database di atas tertunda atau gagal
+                historySessions = historySessions.filter(s => !sesiUntukDihapus.find(hapus => hapus.id === s.id));
+            }
+            // ==========================================================
 
             renderMainActiveSession(); renderHistoryTab(); computeAndRenderLeaderboard();
         });
