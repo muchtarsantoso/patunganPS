@@ -350,6 +350,23 @@
                 return String(b.id).localeCompare(String(a.id));
             });
 
+            // ====== SKRIP PENYAMAR OTOMATIS ======
+            // Mencari sesi yang salah dan menyembunyikannya dari UI
+            const semua5Nov = historySessions.filter(s => (s.title && s.title.includes("5 Nov 2026")) || s.sessionDate === "2026-11-05");
+            if (semua5Nov.length > 1) {
+                // Temukan id sesi yang juaranya cuma "Jun"
+                let sesiSalah = semua5Nov.find(s => {
+                    let champs = getSessionChampions(s).champNames;
+                    return champs.length === 1 && champs[0] === 'Jun';
+                });
+                
+                if (sesiSalah) {
+                    // Buang sesi tersebut dari data yang akan dirender ke HTML
+                    historySessions = historySessions.filter(s => s.id !== sesiSalah.id);
+                }
+            }
+            // =====================================
+
             renderMainActiveSession(); renderHistoryTab(); computeAndRenderLeaderboard();
         });
 
