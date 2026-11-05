@@ -177,15 +177,15 @@
                 <div class="bg-slate-900/70 p-4 border-t border-slate-700 text-[11px] text-slate-400 space-y-2 leading-relaxed">
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-crown text-yellow-500 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Juara Harian:</strong> Diperoleh pemain yang menjadi juara harian terbanyak.</span>
+                        <span><strong>Juara Harian:</strong> Diperoleh pemain dengan Trofi Terbanyak & Waktu Main Tersingkat dalam 1 sesi.</span>
                     </p>
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-trophy text-slate-300 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Total Trofi:</strong> Akumulasi seluruh trofi yang dikumpulkan dari semua sesi permainan.</span>
+                        <span><strong>Total Trofi:</strong> Akumulasi seluruh poin trofi yang dikumpulkan dari semua sesi permainan.</span>
                     </p>
                     <p class="flex items-start gap-2">
                         <i class="fa-solid fa-chart-line text-blue-400 mt-0.5 w-4 text-center"></i> 
-                        <span><strong>Win Rate (%):</strong> Efektivitas pemain meraih gelar Juara harian dari seberapa sering dia ikut main.</span>
+                        <span><strong>Win Rate (%):</strong> Efektivitas pemain meraih gelar Juara dari seberapa sering dia ikut main (Juara / Total Ikut Sesi x 100).</span>
                     </p>
                 </div>
             </div>
@@ -335,6 +335,69 @@
             return { timeStr, dur };
         }
 
+        // ================= KODE RESTORE DATA OTOMATIS =================
+        window.restoreLostData = async () => {
+            document.getElementById('btn-restore').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Memulihkan...';
+            try {
+                // Sesi 5 Nov (Jun & Rendy Juara sama rata waktunya)
+                const t5 = new Date('2026-11-05T14:45:00').getTime();
+                const e5 = new Date('2026-11-05T17:56:00').getTime();
+                await setDoc(doc(db, 'ps_sessions', 'restore_5nov'), {
+                    isActive: false, sessionDate: '2026-11-05', title: 'Sesi Kamis, 5 Nov 2026', totalSewa: 0,
+                    players: [
+                        { id: 'p_1', name: 'Jun', trophies: 3, timeLogs: [{start: t5, end: e5}] },
+                        { id: 'p_2', name: 'Ekky', trophies: 0, timeLogs: [{start: t5, end: e5}] },
+                        { id: 'p_3', name: 'Rendy', trophies: 3, timeLogs: [{start: t5, end: e5}] }
+                    ]
+                });
+                
+                // Sesi 3 Nov (Juara Ekky, Rp 37.000)
+                const t3 = new Date('2026-11-03T13:00:00').getTime();
+                const e3 = new Date('2026-11-03T16:00:00').getTime();
+                await setDoc(doc(db, 'ps_sessions', 'restore_3nov'), {
+                    isActive: false, sessionDate: '2026-11-03', title: 'Sesi Selasa, 3 Nov 2026', totalSewa: 37000,
+                    players: [
+                        { id: 'p_4', name: 'Ekky', trophies: 4, timeLogs: [{start: t3, end: e3}] },
+                        { id: 'p_5', name: 'Widi', trophies: 2, timeLogs: [{start: t3, end: e3}] },
+                        { id: 'p_6', name: 'Muchtar', trophies: 1, timeLogs: [{start: t3, end: e3}] }
+                    ]
+                });
+
+                // Sesi 2 Nov (Juara Jun, Rp 92.001)
+                const t2 = new Date('2026-11-02T18:00:00').getTime();
+                const e2 = new Date('2026-11-02T22:00:00').getTime();
+                await setDoc(doc(db, 'ps_sessions', 'restore_2nov'), {
+                    isActive: false, sessionDate: '2026-11-02', title: 'Sesi Senin, 2 Nov 2026', totalSewa: 92001,
+                    players: [
+                        { id: 'p_7', name: 'Jun', trophies: 5, timeLogs: [{start: t2, end: e2}] },
+                        { id: 'p_8', name: 'Ramdan', trophies: 2, timeLogs: [{start: t2, end: e2}] },
+                        { id: 'p_9', name: 'Rendy', trophies: 1, timeLogs: [{start: t2, end: e2}] },
+                        { id: 'p_10', name: 'Ekky', trophies: 0, timeLogs: [{start: t2, end: e2}] },
+                        { id: 'p_11', name: 'Muchtar', trophies: 0, timeLogs: [{start: t2, end: e2}] }
+                    ]
+                });
+
+                // Sesi 31 Okt (Juara Ramdan, Rp 102.000)
+                const t31 = new Date('2026-10-31T20:00:00').getTime();
+                const e31 = new Date('2026-11-01T01:30:00').getTime();
+                await setDoc(doc(db, 'ps_sessions', 'restore_31okt'), {
+                    isActive: false, sessionDate: '2026-10-31', title: 'Sesi Sabtu, 31 Okt 2026', totalSewa: 102000,
+                    players: [
+                        { id: 'p_12', name: 'Ramdan', trophies: 6, timeLogs: [{start: t31, end: e31}] },
+                        { id: 'p_13', name: 'Rendy', trophies: 3, timeLogs: [{start: t31, end: e31}] },
+                        { id: 'p_14', name: 'Muchtar', trophies: 2, timeLogs: [{start: t31, end: e31}] },
+                        { id: 'p_15', name: 'Jun', trophies: 1, timeLogs: [{start: t31, end: e31}] }
+                    ]
+                });
+                
+                showToast("Data riwayat berhasil dipulihkan!", "success");
+            } catch(err) {
+                showToast("Gagal memulihkan: " + err.message, "error");
+                document.getElementById('btn-restore').innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Coba Pulihkan Lagi';
+            }
+        };
+        // ==============================================================
+
         onSnapshot(collection(db, 'ps_sessions'), (snapshot) => {
             document.getElementById('sesi-loading').classList.add('hidden');
             allSessions = []; activeSession = null; historySessions = [];
@@ -350,28 +413,6 @@
                 return String(b.id).localeCompare(String(a.id));
             });
 
-            // ====== SKRIP AUTO-FIX HAPUS DUPLIKAT TANGGAL 5 NOV ======
-            const sesi5Nov = historySessions.filter(s => (s.title && s.title.includes("5 Nov 2026")) || s.sessionDate === "2026-11-05");
-            
-            if (sesi5Nov.length > 1) {
-                // Simpan data pertama, siapkan array sisanya untuk dihapus
-                const sesiUntukDihapus = sesi5Nov.slice(1);
-                
-                sesiUntukDihapus.forEach(async (s) => {
-                    try {
-                        // Mencoba hapus duplikat dari database
-                        await deleteDoc(doc(db, 'ps_sessions', s.id));
-                    } catch (e) {
-                        console.log("Gagal hapus dari DB (mungkin terkendala permission rules Firebase):", e);
-                    }
-                });
-
-                // Filter dari array memori agar duplikat LANGSUNG HILANG dari tampilan UI
-                // meskipun hapus di database di atas tertunda atau gagal
-                historySessions = historySessions.filter(s => !sesiUntukDihapus.find(hapus => hapus.id === s.id));
-            }
-            // ==========================================================
-
             renderMainActiveSession(); renderHistoryTab(); computeAndRenderLeaderboard();
         });
 
@@ -381,7 +422,7 @@
                 const sessionDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                 await setDoc(doc(db, 'ps_sessions', 'current_active'), { isActive: true, title: formatDateToTitle(sessionDate), sessionDate: sessionDate, totalSewa: 0, players: [] });
                 showToast("Sesi baru dimulai!", "success");
-            } catch (error) { showToast("Gagal memulai sesi: " + (error.message || ""), "error"); }
+            } catch (error) { showToast("Gagal memulai sesi", "error"); }
         };
 
         window.openAddPlayerModal = (sessionId = 'current_active') => {
@@ -427,7 +468,7 @@
             try {
                 await updateDoc(doc(db, 'ps_sessions', session.id), { players: [...session.players, ...newPlayersData] });
                 closeAddPlayerModal(); showToast(`${finalNames.length} pemain ditambahkan!`, "success");
-            } catch (error) { showToast("Gagal menambah: " + (error.message || ""), "error"); }
+            } catch (error) { showToast("Gagal menambah", "error"); }
         };
 
         window.removePlayer = async (sessionId, playerId) => {
@@ -438,7 +479,7 @@
                     const updatedPlayers = session.players.filter(p => String(p.id).trim() !== String(playerId).trim());
                     await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
                     showToast("Pemain dihapus", "success");
-                } catch(err) { showToast("Gagal hapus pemain: " + (err.message || ""), "error"); }
+                } catch(err) { showToast("Gagal hapus pemain", "error"); }
             }
         };
 
@@ -454,7 +495,7 @@
                     await deleteDoc(doc(db, 'ps_sessions', session.id));
                     showToast("Sesi dihapus permanen!", "success");
                 } catch (error) {
-                    showToast("Gagal hapus sesi: " + (error.message || "Pastikan ada izin database"), "error");
+                    showToast("Gagal hapus sesi", "error");
                     if(btnEl) { btnEl.disabled = false; btnEl.innerHTML = '<i class="fa-solid fa-trash"></i> Hapus Sesi'; }
                 }
             }
@@ -465,7 +506,7 @@
              try { 
                  const session = getSessionById(sessionId); if(!session) return;
                  await updateDoc(doc(db, 'ps_sessions', session.id), { sessionDate: newDateStr, title: formatDateToTitle(newDateStr) }); showToast("Tanggal diperbarui", "success"); 
-             } catch (error) { showToast("Gagal update tanggal: " + (error.message || ""), "error"); }
+             } catch (error) { showToast("Gagal update tanggal", "error"); }
         };
 
         window.togglePlayStatus = async (sessionId, playerId, action) => {
@@ -504,7 +545,7 @@
                     return p;
                 });
                 await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
-            } catch(err) { showToast("Gagal update waktu: " + (err.message || ""), "error"); }
+            } catch(err) { showToast("Gagal update waktu", "error"); }
         };
 
         window.updateTrophy = async (sessionId, playerId, delta) => {
@@ -515,7 +556,7 @@
                      return p;
                  });
                 await updateDoc(doc(db, 'ps_sessions', session.id), { players: updatedPlayers });
-            } catch(err) { showToast("Gagal update trofi: " + (err.message || ""), "error"); }
+            } catch(err) { showToast("Gagal update trofi", "error"); }
         };
 
         window.updateTotalSewa = async (sessionId, value) => {
@@ -531,7 +572,7 @@
                 });
                 await updateDoc(doc(db, 'ps_sessions', activeSession.id), { players: updatedPlayers });
                 showToast("Semua timer dihentikan", "success");
-            } catch(err) { showToast("Gagal stop timer: " + (err.message || ""), "error"); }
+            } catch(err) { showToast("Gagal stop timer", "error"); }
         };
 
         function renderMainActiveSession() {
@@ -605,9 +646,19 @@
                 if (detailNode && !detailNode.classList.contains('hidden')) { openCards.push(card.dataset.sessionId); const editNode = card.querySelector('.hist-edit'); if (editNode && !editNode.classList.contains('hidden')) editCards.push(card.dataset.sessionId); }
             });
 
-            if (historySessions.length === 0) { listEl.innerHTML = `<div class="text-center py-10 text-slate-500">Belum ada riwayat sesi.</div>`; return; }
-            let html = '';
+            if (historySessions.length === 0) { 
+                listEl.innerHTML = `
+                <div class="text-center py-12 px-4 border border-dashed border-slate-700 rounded-2xl bg-slate-900/40">
+                    <i class="fa-solid fa-folder-open text-3xl text-slate-600 mb-3"></i>
+                    <p class="text-slate-400 text-sm mb-6">Belum ada riwayat sesi.</p>
+                    <button id="btn-restore" onclick="restoreLostData()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl text-sm transition-transform hover:scale-105 shadow-lg shadow-blue-500/20">
+                        <i class="fa-solid fa-clock-rotate-left mr-2"></i> Pulihkan Data Sebelumnya
+                    </button>
+                </div>`; 
+                return; 
+            }
             
+            let html = '';
             historySessions.forEach(session => {
                 let { champNames } = getSessionChampions(session);
                 let champHtml = champNames.length > 0 ? `<p class="text-xs text-yellow-500 mt-1 font-bold"><i class="fa-solid fa-crown"></i> Juara: ${champNames.join(', ')}</p>` : '';
@@ -734,7 +785,6 @@
             const listEl = document.getElementById('klasemen-list');
             if (sorted.length === 0) { listEl.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-slate-500">Belum ada data dari riwayat sesi.</td></tr>`; return; }
 
-            // Cari nilai maksimum masing-masing kolom untuk HIGHLIGHT
             let maxChamps = 0, maxTrophies = 0, maxWinRate = 0;
             sorted.forEach(p => {
                 p.winRate = p.played > 0 ? Math.round((p.champs / p.played) * 100) : 0;
@@ -743,7 +793,6 @@
                 if (p.winRate > maxWinRate) maxWinRate = p.winRate;
             });
 
-            // Urutkan berdasarkan juara terbanyak lalu trofi terbanyak
             sorted.sort((a,b) => b.champs !== a.champs ? b.champs - a.champs : b.trophies - a.trophies);
 
             let html = '';
@@ -751,7 +800,6 @@
                 let rankStyle = index === 0 ? 'text-yellow-400 font-bold' : (index===1 ? 'text-slate-300 font-bold' : (index===2 ? 'text-amber-600 font-bold' : 'text-slate-400'));
                 let rowBg = index === 0 ? 'bg-yellow-500/5' : '';
                 
-                // Cek highlight
                 let champClass = (p.champs === maxChamps && maxChamps > 0) ? 'bg-yellow-500/20 text-yellow-300 font-black px-2 py-1 rounded-lg drop-shadow-md' : 'text-yellow-500 font-bold';
                 let trophyClass = (p.trophies === maxTrophies && maxTrophies > 0) ? 'bg-slate-500/30 text-white font-black px-2 py-1 rounded-lg drop-shadow-md' : 'text-slate-300';
                 let winRateClass = (p.winRate === maxWinRate && maxWinRate > 0) ? 'bg-blue-500/20 text-blue-200 font-black px-2 py-1 rounded-lg drop-shadow-md' : 'text-blue-400 font-medium';
@@ -834,7 +882,7 @@
                 await setDoc(doc(db, 'ps_sessions', uniqueId), finalData);
                 await deleteDoc(doc(db, 'ps_sessions', 'current_active'));
                 closeModal(); showToast("Sesi disimpan ke riwayat!", "success");
-            } catch (error) { showToast("Gagal menyimpan sesi final: " + (error.message || ""), "error"); }
+            } catch (error) { showToast("Gagal menyimpan sesi final", "error"); }
         };
     </script>
 </body>
