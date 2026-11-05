@@ -417,7 +417,8 @@
 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
-                    const sessionData = { id: docSnap.id, ...data };
+                    // ID dokumen Firestore harus menjadi sumber ID utama; field 'id' di data lama tidak boleh menimpanya.
+                    const sessionData = { ...data, id: docSnap.id };
 
                     if (data.isActive && docSnap.id === 'current_active') {
                         activeSession = sessionData;
@@ -518,7 +519,9 @@
             const id = String(sessionId || '').trim();
             if (!id) return showToast("ID sesi tidak valid", "error");
 
-            if (id === 'current_active' || (activeSession && id === String(activeSession.id))) {
+            // Hanya dokumen khusus current_active yang tidak boleh dihapus dari riwayat.
+            // ID sesi riwayat selalu memakai ID dokumen Firestore, bukan field id lama di dalam data.
+            if (id === 'current_active') {
                 return showToast("Sesi aktif tidak bisa dihapus di sini. Selesaikan sesi terlebih dahulu.", "error");
             }
             if (deletingSessionIds.has(id)) return;
@@ -947,8 +950,10 @@
                     let logs = (p.timeLogs||[]).map(l => l.end === null ? { ...l, end: Date.now() } : l);
                     return { ...p, timeLogs: logs, isActive: false };
                 });
-                const finalData = { ...activeSession, players: updatedPlayers, isActive: false, endTime: Date.now() };
                 const uniqueId = `session_${Date.now()}`;
+                // Jangan ikut menyimpan id='current_active' dari dokumen aktif ke dokumen riwayat baru.
+                const { id: _oldDocumentId, ...activeSessionData } = activeSession;
+                const finalData = { ...activeSessionData, players: updatedPlayers, isActive: false, endTime: Date.now() };
                 await setDoc(doc(db, 'ps_sessions', uniqueId), finalData);
                 await deleteDoc(doc(db, 'ps_sessions', 'current_active'));
                 closeModal(); showToast("Sesi disimpan ke riwayat!", "success");
