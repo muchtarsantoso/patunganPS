@@ -237,8 +237,57 @@
         </div>
     </div>
 
+    <!-- MODAL: PLAYER DETAIL -->
+    <div id="modal-player-detail" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] hidden flex justify-center items-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-800 w-full max-w-xs rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-700 relative transform transition-transform duration-300 scale-95" id="modal-player-detail-box">
+            <button onclick="closePlayerDetailModal()" class="absolute top-4 right-4 w-8 h-8 bg-slate-900/60 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-red-500 transition-colors z-10 shadow-lg border border-slate-700/50">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="relative w-full h-72 bg-slate-900 flex items-center justify-center overflow-hidden">
+                <img id="player-detail-img" src="" alt="Player" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+                <div class="absolute bottom-4 left-5 right-5">
+                    <h2 id="player-detail-name" class="text-3xl font-black text-white drop-shadow-md tracking-wide">Nama</h2>
+                </div>
+            </div>
+            
+            <div class="p-5 pt-3 bg-slate-900">
+                <div class="grid grid-cols-3 gap-2 mb-3">
+                    <div class="bg-slate-800 p-3 rounded-2xl border border-slate-700/60 text-center shadow-inner">
+                        <i class="fa-solid fa-gamepad text-orange-400 text-lg mb-1 block drop-shadow"></i>
+                        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">Sesi Main</div>
+                        <div id="player-detail-played" class="font-bold text-xl text-slate-200">0</div>
+                    </div>
+                    <div class="bg-slate-800 p-3 rounded-2xl border border-slate-700/60 text-center shadow-inner relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-8 h-8 bg-yellow-500/10 rounded-bl-full"></div>
+                        <i class="fa-solid fa-crown text-yellow-500 text-lg mb-1 block drop-shadow"></i>
+                        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">Juara</div>
+                        <div id="player-detail-champs" class="font-bold text-xl text-yellow-400">0</div>
+                    </div>
+                    <div class="bg-slate-800 p-3 rounded-2xl border border-slate-700/60 text-center shadow-inner">
+                        <i class="fa-solid fa-trophy text-slate-300 text-lg mb-1 block drop-shadow"></i>
+                        <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">Total Trofi</div>
+                        <div id="player-detail-trophies" class="font-bold text-xl text-slate-200">0</div>
+                    </div>
+                </div>
+                
+                <div class="bg-slate-800 p-3.5 rounded-2xl border border-slate-700/60 flex justify-between items-center shadow-inner relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                    <div class="flex items-center gap-2 text-slate-300 font-bold uppercase text-[10px] tracking-wider ml-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                        Tingkat Kemenangan
+                    </div>
+                    <div id="player-detail-winrate" class="font-black text-2xl text-blue-400 drop-shadow-md">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST -->
-    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-slate-800 border border-slate-700 text-white px-6 py-3 rounded-full shadow-2xl z-[150] opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-slate-800 border border-slate-700 text-white px-6 py-3 rounded-full shadow-2xl z-[300] opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
         <i id="toast-icon" class="fa-solid fa-info-circle text-orange-400"></i>
         <span id="toast-msg" class="text-sm font-medium">Message</span>
     </div>
@@ -262,21 +311,67 @@
         const defaultPlayerNames = ["Jun", "Muchtar", "Ekky", "Ramdan", "Rendy", "Widi"];
         let selectedNewPlayers = []; let currentAddPlayerSessionId = null;
 
-        // ================= HELPER FOTO PROFIL =================
-        const playerImages = {
-            "Ekky": "https://drive.google.com/thumbnail?id=1X_NqoNGVithSekOe-xxLTUvtxc-xCNhW&sz=w150-h150",
-            "Ramdan": "https://drive.google.com/thumbnail?id=1hefjyM8MGXouQ8DyIMbq4KJAYKe4orfj&sz=w150-h150",
-            "Widi": "https://drive.google.com/thumbnail?id=1crxJ44I2D5I78fyIKRWmXE2fxPF5J27h&sz=w150-h150",
-            "Rendy": "https://drive.google.com/thumbnail?id=1sf5QuGedFJGft1G-6aaeV8Kp5m3uFMTu&sz=w150-h150",
-            "Muchtar": "https://drive.google.com/thumbnail?id=1sBYLzbVzbZjD9bQcJwUGXkIfKKAH7E6c&sz=w150-h150",
-            "Jun": "https://drive.google.com/thumbnail?id=1MRcshd3RmSgEkq-QN9kFFmmhf4wIqoWp&sz=w150-h150"
+        // ================= HELPER FOTO PROFIL (UPDATED) =================
+        const playerImageIds = {
+            "Ekky": "1bUc7mPOIkrqKql0iVrkrfNewMA_9NXEB",
+            "Ramdan": "1nuu-XYizEq4EL0SHr-lmFaOHavPfr3N_",
+            "Widi": "1crxJ44I2D5I78fyIKRWmXE2fxPF5J27h",
+            "Rendy": "1sf5QuGedFJGft1G-6aaeV8Kp5m3uFMTu",
+            "Muchtar": "1sBYLzbVzbZjD9bQcJwUGXkIfKKAH7E6c",
+            "Jun": "1Vr_nYUG06RhdXF0tlsm2wudctaNS4DVU"
+        };
+        const getPlayerImage = (name, large = false) => {
+            const key = Object.keys(playerImageIds).find(k => k.toLowerCase() === name.trim().toLowerCase());
+            const sz = large ? "w600-h600" : "w150-h150";
+            return key ? `https://drive.google.com/thumbnail?id=${playerImageIds[key]}&sz=${sz}` 
+                       : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1e293b&color=cbd5e1&size=${large ? 500 : 150}`;
+        };
+        // ================================================================
+
+        // ================= HELPER PLAYER DETAIL MODAL ===================
+        window.showPlayerDetail = (name) => {
+            name = name.trim();
+            let played = 0; let champs = 0; let trophies = 0;
+
+            historySessions.forEach(session => {
+                let { champNames } = getSessionChampions(session);
+                let pData = session.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+                if(pData) {
+                    played++;
+                    trophies += (pData.trophies || 0);
+                    if(champNames.includes(pData.name)) champs++;
+                }
+            });
+
+            let winRate = played > 0 ? Math.round((champs / played) * 100) : 0;
+
+            document.getElementById('player-detail-name').innerText = name;
+            document.getElementById('player-detail-played').innerText = played;
+            document.getElementById('player-detail-champs').innerText = champs;
+            document.getElementById('player-detail-trophies').innerText = trophies;
+            document.getElementById('player-detail-winrate').innerText = `${winRate}%`;
+            document.getElementById('player-detail-img').src = getPlayerImage(name, true);
+            
+            const modal = document.getElementById('modal-player-detail');
+            const box = document.getElementById('modal-player-detail-box');
+            modal.classList.remove('hidden');
+            // Sedikit delay agar animasi transisi opacity & scale terlihat mulus
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                box.classList.remove('scale-95');
+                box.classList.add('scale-100');
+            }, 10);
         };
 
-        const getPlayerImage = (name) => {
-            const key = Object.keys(playerImages).find(k => k.toLowerCase() === name.trim().toLowerCase());
-            return key ? playerImages[key] : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1e293b&color=cbd5e1`;
+        window.closePlayerDetailModal = () => {
+            const modal = document.getElementById('modal-player-detail');
+            const box = document.getElementById('modal-player-detail-box');
+            modal.classList.add('opacity-0');
+            box.classList.remove('scale-100');
+            box.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300); // Waktu sesuai durasi CSS transition
         };
-        // ======================================================
+        // ================================================================
 
         window.switchTab = (tab) => {
             ['sesi', 'riwayat', 'klasemen'].forEach(t => {
@@ -752,7 +847,7 @@
                 <div class="bg-slate-800/90 rounded-xl p-4 shadow-lg border ${isPlaying ? 'border-orange-500/50 shadow-orange-900/30' : 'border-slate-700 opacity-90'} transition-all mb-3 backdrop-blur-sm">
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex items-center gap-2">
-                            <img src="${getPlayerImage(p.name)}" alt="${p.name}" class="w-8 h-8 rounded-full object-cover border-2 border-slate-600 shadow-sm shrink-0">
+                            <img src="${getPlayerImage(p.name)}" alt="${p.name}" onclick="showPlayerDetail('${p.name}')" class="w-8 h-8 rounded-full object-cover border-2 border-slate-600 shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform active:scale-95">
                             <h4 class="font-bold text-lg">${p.name}</h4>
                             ${isPlaying ? '<span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' : ''}
                         </div>
@@ -823,7 +918,7 @@
                     strukHtml += `
                     <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 mb-2">
                         <div class="flex items-center gap-3">
-                            <img src="${getPlayerImage(p.name)}" alt="${p.name}" class="w-9 h-9 rounded-full object-cover border-2 border-slate-600 shadow-sm shrink-0">
+                            <img src="${getPlayerImage(p.name)}" alt="${p.name}" onclick="showPlayerDetail('${p.name}')" class="w-9 h-9 rounded-full object-cover border-2 border-slate-600 shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform active:scale-95">
                             <div>
                                 <div class="font-bold text-sm text-slate-200 flex items-center gap-1">${p.name} ${champNames.includes(p.name) ? '<i class="fa-solid fa-crown text-yellow-500 text-xs"></i>' : ''}</div>
                                 <div class="text-xs text-slate-400 mt-0.5">${p.timeStr}${formatDuration(p.calcDuration)} main</div>
@@ -953,7 +1048,7 @@
                     <td class="p-3 pl-4 text-center ${rankStyle}">${index + 1}</td>
                     <td class="p-3">
                         <div class="flex items-center gap-2">
-                            <img src="${getPlayerImage(p.name)}" alt="${p.name}" class="w-7 h-7 rounded-full object-cover border border-slate-600 shadow-sm shrink-0">
+                            <img src="${getPlayerImage(p.name)}" alt="${p.name}" onclick="showPlayerDetail('${p.name}')" class="w-7 h-7 rounded-full object-cover border border-slate-600 shadow-sm shrink-0 cursor-pointer hover:scale-125 transition-transform active:scale-95">
                             <span class="font-semibold">${p.name}</span>
                         </div>
                     </td>
@@ -997,7 +1092,7 @@
                 receiptHtml += `
                 <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 flex justify-between items-center">
                     <div class="flex items-center gap-3">
-                        <img src="${getPlayerImage(p.name)}" alt="${p.name}" class="w-9 h-9 rounded-full object-cover border-2 border-slate-600 shadow-sm shrink-0">
+                        <img src="${getPlayerImage(p.name)}" alt="${p.name}" onclick="showPlayerDetail('${p.name}')" class="w-9 h-9 rounded-full object-cover border-2 border-slate-600 shadow-sm shrink-0 cursor-pointer hover:scale-110 transition-transform active:scale-95">
                         <div>
                             <div class="font-bold flex items-center gap-1">${p.name} ${champNames.includes(p.name) ? '<i class="fa-solid fa-crown text-yellow-500 text-xs"></i>' : ''}</div>
                             <div class="text-xs text-slate-400 mt-0.5">${p.timeStr}${formatDuration(p.calcDuration)} main</div>
